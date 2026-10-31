@@ -28,6 +28,16 @@ test('accesibilidad: idioma, toda <img> con alt, un solo h1 y salto al contenido
   assert.match(HTML, /:focus-visible/);
 });
 
+test('las imágenes no se estiran: alto automático cuando el CSS fija el ancho', () => {
+  const css = HTML.slice(HTML.indexOf('<style>'), HTML.indexOf('</style>'));
+  assert.match(css, /\bimg \{[^}]*height: auto/, 'regla general img con height: auto');
+  for (const sel of ['.about img', '.pose img']) {
+    const rule = css.match(new RegExp(sel.replace('.', '\\.') + ' \\{([^}]*)\\}'));
+    assert.ok(rule, sel);
+    assert.match(rule[1], /height: auto/, sel + ' sin height: auto');
+  }
+});
+
 test('cuenta mi historia completa: el ecosistema desde 2026-02-19, en sus tres etapas', () => {
   for (const s of ['2026-02-19', 'En el chat', 'Con agentes', 'La Factory', '100 %']) assert.ok(HTML.includes(s), s);
 });
