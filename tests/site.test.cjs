@@ -45,3 +45,23 @@ test('cuenta mi historia completa: el ecosistema desde 2026-02-19, en sus tres e
 test('sin datos privados: ni keys, ni tokens, ni correos', () => {
   assert.doesNotMatch(HTML, /api[_-]?key|token|@[a-z0-9-]+\.(com|ar)/i);
 });
+
+test('Vestidor de cuerpo entero: 9 de trabajo y 9 vestuarios, sin «Próximamente»', () => {
+  const sec = HTML.slice(HTML.indexOf('<section id="vestidor">'), HTML.indexOf('<section id="eco">'));
+  const rack = (id) => sec.slice(sec.indexOf('id="' + id + '"'), sec.indexOf('</div>\n    </div>', sec.indexOf('id="' + id + '"')));
+  const imgs = (block) => [...block.matchAll(/<img\b[^>]*src="([^"]+)"[^>]*>/g)];
+  const trabajo = imgs(rack('trabajo-poses'));
+  const vestuarios = imgs(rack('vestuarios'));
+  assert.equal(trabajo.length, 9, 'trabajo');
+  assert.equal(vestuarios.length, 9, 'vestuarios');
+  for (const [, src] of trabajo) assert.match(src, /^assets\/shiruvana\/cuerpo-[a-z]+\.webp$/);
+  for (const [, src] of vestuarios) assert.match(src, /^assets\/shiruvana\/vestuario-[a-z]+\.webp$/);
+  assert.equal(new Set([...trabajo, ...vestuarios].map((m) => m[1])).size, 18, 'sin repetidas');
+  for (const [tag] of [...trabajo, ...vestuarios]) {
+    assert.match(tag, /width="\d+" height="\d+"/, 'sin tamaño: ' + tag.slice(0, 70));
+    assert.match(tag, /loading="lazy"/);
+  }
+  assert.doesNotMatch(sec, /Próximamente/);
+  const css = HTML.slice(HTML.indexOf('<style>'), HTML.indexOf('</style>'));
+  assert.match(css, /\.full \.pose img \{[^}]*aspect-ratio: 2\/3[^}]*object-fit: contain/, 'cuerpo entero sin recortar');
+});
