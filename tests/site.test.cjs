@@ -31,7 +31,7 @@ test('accesibilidad: idioma, toda <img> con alt, un solo h1 y salto al contenido
 test('las imágenes no se estiran: alto automático cuando el CSS fija el ancho', () => {
   const css = HTML.slice(HTML.indexOf('<style>'), HTML.indexOf('</style>'));
   assert.match(css, /\bimg \{[^}]*height: auto/, 'regla general img con height: auto');
-  for (const sel of ['.about img', '.pose img']) {
+  for (const sel of ['.about img', '.pose img', '.work > img']) {
     const rule = css.match(new RegExp(sel.replace('.', '\\.') + ' \\{([^}]*)\\}'));
     assert.ok(rule, sel);
     assert.match(rule[1], /height: auto/, sel + ' sin height: auto');
@@ -64,4 +64,14 @@ test('Vestidor de cuerpo entero: 9 de trabajo y 9 vestuarios, sin «Próximament
   assert.doesNotMatch(sec, /Próximamente/);
   const css = HTML.slice(HTML.indexOf('<style>'), HTML.indexOf('</style>'));
   assert.match(css, /\.full \.pose img \{[^}]*aspect-ratio: 2\/3[^}]*object-fit: contain/, 'cuerpo entero sin recortar');
+});
+
+test('cuerpo entero fuera del Vestidor: me presento en «Quién soy» y camino en «Cómo trabajo», sin recortes', () => {
+  const sec = (id) => HTML.slice(HTML.indexOf('<section id="' + id + '">'), HTML.indexOf('</section>', HTML.indexOf('<section id="' + id + '">')));
+  assert.match(sec('quien'), /<img src="assets\/shiruvana\/cuerpo-presenta\.webp"[^>]*width="640" height="954"/);
+  assert.match(sec('trabajo'), /<img src="assets\/shiruvana\/cuerpo-camina\.webp"[^>]*width="640" height="954"/);
+  const css = HTML.slice(HTML.indexOf('<style>'), HTML.indexOf('</style>'));
+  for (const sel of ['\\.about img', '\\.work > img']) {
+    assert.match(css, new RegExp(sel + ' \\{[^}]*aspect-ratio: 2\\/3[^}]*object-fit: contain'), sel + ' recorta');
+  }
 });

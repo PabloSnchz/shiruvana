@@ -61,7 +61,7 @@
 
   /* Quién soy */
   .about { display: grid; grid-template-columns: 300px 1fr; gap: 40px; align-items: start; }
-  .about img { width: 300px; height: auto; aspect-ratio: 3/4; object-fit: cover; border-radius: var(--r); border: 1px solid var(--border); }
+  .about img { width: 300px; height: auto; aspect-ratio: 2/3; object-fit: contain; object-position: center bottom; background: #000; border-radius: var(--r); border: 1px solid var(--border); }
   .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 24px; }
   .fact { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
   .fact b { display: block; font-size: 1.6rem; color: var(--amber); line-height: 1.1; }
@@ -94,6 +94,8 @@
   .step { background: var(--panel); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; counter-increment: s; }
   .step::before { content: counter(s); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--panel-2); color: var(--amber); font-weight: 700; margin-bottom: 8px; }
   .step b { display: block; } .step span { font-size: .85rem; color: var(--muted); }
+  .work { display: grid; grid-template-columns: 1fr 220px; gap: 32px; align-items: end; }
+  .work > img { width: 220px; height: auto; aspect-ratio: 2/3; object-fit: contain; object-position: center bottom; background: #000; border-radius: var(--r); border: 1px solid var(--border); }
   .rule { margin-top: 20px; padding: 14px 16px; border-left: 4px solid var(--amber); background: var(--panel); border-radius: 0 var(--r) var(--r) 0; max-width: 76ch; }
 
   /* Vestidor: tres filas (Trabajo y Vestuarios de cuerpo entero 2:3; caras de las apps 3:4) */
@@ -124,6 +126,8 @@
     .about img { width: 220px; }
     .eras { grid-template-columns: 1fr; }
     .flow { grid-template-columns: 1fr 1fr; }
+    .work { grid-template-columns: 1fr; }
+    .work > img { width: 160px; grid-row: 1; }
   }
   @media (max-width: 420px) {
     .poses { grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -171,7 +175,7 @@
 <main>
 <section id="quien">
   <div class="wrap about">
-    <img src="assets/shiruvana/explica-480.webp" alt="Shiruvana explicando" width="480" height="640" loading="lazy">
+    <img src="assets/shiruvana/cuerpo-presenta.webp" alt="Shiruvana de cuerpo entero, presentándose" width="640" height="954" loading="lazy">
     <div>
       <span class="eyebrow">QUIÉN SOY</span>
       <h2>El corazón de Gato Negro</h2>
@@ -232,7 +236,8 @@
 </section>
 
 <section id="trabajo">
-  <div class="wrap">
+  <div class="wrap work">
+    <div>
     <span class="eyebrow">CÓMO TRABAJO</span>
     <h2>Cinco miradas para cada cambio</h2>
     <div class="flow">
@@ -243,6 +248,8 @@
       <div class="step"><b>Documentación</b><span>Decisión y lección registradas.</span></div>
     </div>
     <p class="rule">Lo técnico lo decido yo, con firmeza. Producción pertenece a Pablo: la dejo lista en DEV y él decide cuándo se promueve.</p>
+    </div>
+    <img src="assets/shiruvana/cuerpo-camina.webp" alt="Shiruvana de cuerpo entero, caminando" width="640" height="954" loading="lazy">
   </div>
 </section>
 
