@@ -1,12 +1,14 @@
-/* Escenario 1.1.0 — mi presentación por escenas (BL-090 MC-1 y MC-2).
+/* Escenario 1.2.0 — mi presentación por escenas (BL-090 MC-1 a MC-3).
    Motor sin dependencias: lee el guion (js/guion.js) y los datos del modo lectura
    (index.html), y arma la función a pantalla completa.
    Rutas: #/<capitulo>/<n> = función; #lectura o #<sección> = modo lectura.
-   No guarda nada en el navegador. */
+   Enlace: ?para=jugador|curioso|pablo arma la función para ese público; &sola=1 la
+   deja andar sola. Lo elegido vive en la dirección, no en el navegador: no guardo nada. */
 (function (root) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
+  var PUBLICOS = ['jugador', 'curioso', 'pablo'];
   var POSES = 'assets/shiruvana/';
   var GATO = 'assets/gato/gato-';
   var TIPEO_MS = 22;
@@ -27,20 +29,64 @@
     return '#/' + p.cap.id + '/' + (p.e + 1);
   }
 
-  function leerHash(hash, lista) {
+  // Sin número de escena (#/<capitulo>), voy a la primera que ve este público.
+  function leerHash(hash, lista, publico) {
     hash = hash || '';
     if (hash === '' || hash === '#') return { modo: 'funcion', i: 0 };
     if (hash.indexOf('#/') !== 0) return { modo: 'lectura', ancla: hash.slice(1) };
     var partes = hash.slice(2).split('/');
     var id = partes[0] || '';
-    var n = parseInt(partes[1], 10) || 1;
-    var primero = -1;
+    var n = parseInt(partes[1], 10) || 0;
+    var primero = -1, primeroVisible = -1;
     for (var i = 0; i < lista.length; i++) {
       if (lista[i].cap.id !== id) continue;
       if (primero < 0) primero = i;
-      if (lista[i].e === n - 1) return { modo: 'funcion', i: i };
+      if (primeroVisible < 0 && visible(lista[i].esc, publico)) primeroVisible = i;
+      if (n && lista[i].e === n - 1) return { modo: 'funcion', i: i };
     }
+    if (!n && primeroVisible >= 0) return { modo: 'funcion', i: primeroVisible };
     return { modo: 'funcion', i: primero >= 0 ? primero : 0 };
+  }
+
+  // ---------- públicos y modo que avanza solo ----------
+
+  // Quien no eligió ve la función de «curioso»: la escena solo para Pablo no aparece.
+  function visible(esc, publico) {
+    return !esc.para || esc.para.indexOf(publico || 'curioso') >= 0;
+  }
+
+  function textoDe(esc, publico) {
+    if (typeof esc.texto === 'string') return esc.texto;
+    return (publico && esc.texto[publico]) || esc.texto.base;
+  }
+
+  function vecina(lista, i, dir, publico) {
+    for (var j = i + dir; j >= 0 && j < lista.length; j += dir) {
+      if (visible(lista[j].esc, publico)) return j;
+    }
+    return -1;
+  }
+
+  function leerQuery(search) {
+    var out = { para: null, sola: false };
+    String(search || '').replace(/^\?/, '').split('&').forEach(function (par) {
+      var kv = par.split('=');
+      if (kv[0] === 'para' && PUBLICOS.indexOf(kv[1]) >= 0) out.para = kv[1];
+      if (kv[0] === 'sola' && kv[1] === '1') out.sola = true;
+    });
+    return out;
+  }
+
+  function armarQuery(publico, sola) {
+    var p = [];
+    if (publico) p.push('para=' + publico);
+    if (sola) p.push('sola=1');
+    return p.length ? '?' + p.join('&') : '';
+  }
+
+  // Cuánto me quedo en una escena cuando la función anda sola: lo justo para leerla.
+  function espera(texto) {
+    return Math.min(9000, 2200 + String(texto || '').length * 30);
   }
 
   function cifra(valor) {
@@ -129,7 +175,12 @@
     var html = doc.documentElement;
     var lista = aplanar(guion);
     var reducido = !!(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    var estado = { modo: null, actual: -1, cap: -1, pose: undefined, fondo: null, gato: undefined, toques: 0, escribiendo: false, timer: null, texto: '' };
+    var q = leerQuery(win.location.search);
+    var estado = {
+      modo: null, actual: -1, cap: -1, pose: undefined, fondo: null, gato: undefined, toques: 0,
+      escribiendo: false, timer: null, texto: '', publico: q.para, guiado: q.sola
+    };
+    var guiaTimer = null;
     var gatoCfg = guion.gato || { alt: {}, frases: ['…'] };
     var primeraVez = true;
 
@@ -196,24 +247,51 @@
     var next = h('button', { class: 'st-next', type: 'button', text: 'Siguiente →' });
     var progI = h('i');
     var cuenta = h('span', { class: 'st-cuenta' });
-    var pie = h('footer', { class: 'st-pie' }, [prev, h('div', { class: 'st-prog', 'aria-hidden': 'true' }, [progI]), cuenta, next]);
+    var guia = h('button', { class: 'st-guia', type: 'button', 'aria-pressed': 'false', title: 'Que la función avance sola' });
+    var pie = h('footer', { class: 'st-pie' }, [prev, guia, h('div', { class: 'st-prog', 'aria-hidden': 'true' }, [progI]), cuenta, next]);
 
     vaciar(raiz);
     [capas, chispas, barra, visual, pj, globo, pie].forEach(function (x) { raiz.appendChild(x); });
 
     // ---------- piezas visuales ----------
 
+    function vPistas() {
+      return h('ul', { class: 'v-pistas' }, [
+        escalonar(h('li', null, [h('kbd', { text: 'Clic' }), h('span', { text: ' o ' }), h('kbd', { text: '→' }), h('span', { text: ' seguir' })]), 0),
+        escalonar(h('li', null, [h('kbd', { text: '←' }), h('span', { text: ' volver' })]), 1),
+        escalonar(h('li', null, [h('kbd', { text: 'Esc' }), h('span', { text: ' modo lectura' })]), 2),
+        escalonar(h('li', null, [h('span', { text: 'En el celular, deslizá' })]), 3)
+      ]);
+    }
+
     function vTitulo(v) {
       var hijos = [h('p', { class: 'v-ante', text: v.ante }), h('p', { class: 'v-titulo', text: v.titulo })];
-      if (v.pistas) {
-        hijos.push(h('ul', { class: 'v-pistas' }, [
-          escalonar(h('li', null, [h('kbd', { text: 'Clic' }), h('span', { text: ' o ' }), h('kbd', { text: '→' }), h('span', { text: ' seguir' })]), 0),
-          escalonar(h('li', null, [h('kbd', { text: '←' }), h('span', { text: ' volver' })]), 1),
-          escalonar(h('li', null, [h('kbd', { text: 'Esc' }), h('span', { text: ' modo lectura' })]), 2),
-          escalonar(h('li', null, [h('span', { text: 'En el celular, deslizá' })]), 3)
-        ]));
-      }
+      if (v.pistas) hijos.push(vPistas());
       return h('div', { class: 'v v-tit' }, hijos);
+    }
+
+    // ¿Quién sos? Tres puertas de entrada y el interruptor de la función que anda sola.
+    var botonesPublico = [];
+    var botonSola = null;
+    function vEleccion(v) {
+      botonesPublico = (guion.publicos || []).map(function (p, i) {
+        var b = h('button', { class: 'v-publico', type: 'button', 'data-publico': p.id, 'aria-pressed': String(estado.publico === p.id) }, [
+          h('b', { text: p.titulo }), h('span', { text: p.texto })
+        ]);
+        b.addEventListener('click', function () { elegir(p.id); });
+        return escalonar(b, i);
+      });
+      botonSola = h('button', { class: 'v-sola', type: 'button', 'aria-pressed': String(estado.guiado) }, [
+        h('i', { 'aria-hidden': 'true' }), h('span', { text: 'Que avance sola' })
+      ]);
+      botonSola.addEventListener('click', function () { ponerGuiado(!estado.guiado); });
+      var hijos = [
+        h('p', { class: 'v-ante', text: v.ante }), h('p', { class: 'v-titulo', text: v.titulo }),
+        h('div', { class: 'v-publicos', role: 'group', 'aria-label': 'Elegí quién sos' }, botonesPublico),
+        botonSola
+      ];
+      if (v.pistas) hijos.push(vPistas());
+      return h('div', { class: 'v v-eleccion' }, hijos);
     }
 
     var piezas = {
@@ -226,6 +304,7 @@
         ]);
       },
       titulo: vTitulo,
+      eleccion: vEleccion,
       tarjetas: function (v) {
         var items = v.items || tramo(datos[v.fuente] || [], v);
         return h('div', { class: 'v v-tarjetas' }, items.map(function (t, i) {
@@ -347,21 +426,78 @@
     function completar() {
       pararTipeo();
       tipeo.textContent = estado.texto;
+      programarGuia();
     }
     function tipear(texto) {
       pararTipeo();
       estado.texto = texto;
       sr.textContent = texto;
-      if (reducido) { tipeo.textContent = texto; return; }
+      if (reducido) { tipeo.textContent = texto; programarGuia(); return; }
       var n = 0;
       estado.escribiendo = true;
       globo.classList.add('tipeando');
       (function tick() {
         n += TIPEO_PASO;
         tipeo.textContent = texto.slice(0, n);
-        if (n >= texto.length) { estado.escribiendo = false; estado.timer = null; globo.classList.remove('tipeando'); return; }
+        if (n >= texto.length) {
+          estado.escribiendo = false; estado.timer = null; globo.classList.remove('tipeando');
+          programarGuia();
+          return;
+        }
         estado.timer = win.setTimeout(tick, TIPEO_MS);
       })();
+    }
+
+    // ---------- la función que anda sola ----------
+
+    function pararGuia() {
+      if (guiaTimer) win.clearTimeout(guiaTimer);
+      guiaTimer = null;
+    }
+    function programarGuia() {
+      pararGuia();
+      if (!estado.guiado || estado.modo !== 'funcion') return;
+      var j = vecina(lista, estado.actual, 1, estado.publico);
+      if (j < 0) { ponerGuiado(false); return; } // llegué al final: me quedo en los créditos
+      guiaTimer = win.setTimeout(function () { guiaTimer = null; ir(j); }, espera(estado.texto));
+    }
+    function pintarGuia() {
+      guia.setAttribute('aria-pressed', String(estado.guiado));
+      guia.textContent = estado.guiado ? '⏸ Pausa' : '▶ Sola';
+      guia.setAttribute('aria-label', estado.guiado ? 'Pausar: avanzo yo' : 'Que la función avance sola');
+      if (botonSola) botonSola.setAttribute('aria-pressed', String(estado.guiado));
+      raiz.classList.toggle('guiado', estado.guiado);
+    }
+    function ponerGuiado(si) {
+      estado.guiado = !!si;
+      pintarGuia();
+      sincronizarUrl();
+      if (estado.guiado && !estado.escribiendo) programarGuia();
+      if (!estado.guiado) pararGuia();
+    }
+    guia.addEventListener('click', function () { ponerGuiado(!estado.guiado); });
+
+    // ---------- quién llega ----------
+
+    function sincronizarUrl() {
+      if (!win.history || !win.history.replaceState) return;
+      var base = armarQuery(estado.publico, estado.guiado) || win.location.pathname || './';
+      win.history.replaceState(null, '', base + (win.location.hash || ''));
+    }
+    function pintarPublico() {
+      raiz.setAttribute('data-publico', estado.publico || 'todos');
+      botonesPublico.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-publico') === estado.publico)); });
+      pills.forEach(function (a, c) {
+        var alguna = guion.capitulos[c].escenas.some(function (esc) { return visible(esc, estado.publico); });
+        a.classList.toggle('fuera', !alguna);
+      });
+    }
+    function elegir(id) {
+      estado.publico = id;
+      pintarPublico();
+      sincronizarUrl();
+      var j = vecina(lista, estado.actual, 1, estado.publico);
+      if (j >= 0) ir(j);
     }
 
     // ---------- pintar una escena ----------
@@ -426,6 +562,7 @@
     // ---------- el Vestidor ----------
 
     function vestir(it, boton) {
+      if (estado.guiado) ponerGuiado(false); // si se pone a probar ropa, la función espera
       hijosDe(boton.parentNode).forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
       boton.setAttribute('aria-pressed', 'true');
       ponerPose(poseDe(it.src), it.alt);
@@ -451,6 +588,7 @@
 
     function pintar(i) {
       var p = lista[i], esc = p.esc;
+      pararGuia(); // cada escena programa su propia espera cuando termino de hablar
       estado.actual = i;
       if (estado.cap !== -1 && estado.cap !== p.c) cortina(p.c);
       estado.cap = p.c;
@@ -468,11 +606,15 @@
       globo.classList.remove('entra');
       void globo.offsetWidth; // reinicia la animación del globo
       globo.classList.add('entra');
-      tipear(esc.texto);
-      progI.style.width = Math.round(((i + 1) / lista.length) * 100) + '%';
-      cuenta.textContent = (i + 1) + ' / ' + lista.length;
-      prev.disabled = i === 0;
-      next.disabled = i === lista.length - 1;
+      // La cuenta y el avance son de las escenas que ve este público.
+      var vistas = lista.filter(function (x) { return visible(x.esc, estado.publico); });
+      var pos = lista.slice(0, i + 1).filter(function (x) { return visible(x.esc, estado.publico); }).length || 1;
+      progI.style.width = Math.round((pos / vistas.length) * 100) + '%';
+      cuenta.textContent = pos + ' / ' + vistas.length;
+      prev.disabled = vecina(lista, i, -1, estado.publico) < 0;
+      next.disabled = vecina(lista, i, 1, estado.publico) < 0;
+      guia.disabled = next.disabled; // en los créditos no hay a dónde avanzar sola
+      tipear(textoDe(esc, estado.publico));
       raiz.setAttribute('aria-label', 'Shiruvana se presenta: ' + p.cap.titulo + ', escena ' + (p.e + 1) + ' de ' + p.cap.escenas.length);
       if (esc.visual.tipo === 'cifras') contar(pieza);
       precargar(i + 1);
@@ -497,6 +639,7 @@
 
     function modoLectura(ancla) {
       pararTipeo();
+      pararGuia();
       estado.modo = 'lectura';
       estado.actual = -1;
       estado.cap = -1;
@@ -507,7 +650,7 @@
     }
 
     function alHash() {
-      var r = leerHash(win.location.hash, lista);
+      var r = leerHash(win.location.hash, lista, estado.publico);
       if (r.modo === 'lectura') modoLectura(r.ancla);
       else modoFuncion(r.i);
     }
@@ -517,8 +660,15 @@
       if (i === estado.actual) return;
       win.location.hash = hashDe(lista, i);
     }
-    function avanzar() { if (estado.escribiendo) completar(); else ir(estado.actual + 1); }
-    function retroceder() { ir(estado.actual - 1); }
+    function avanzar() {
+      if (estado.escribiendo) { completar(); return; }
+      var j = vecina(lista, estado.actual, 1, estado.publico);
+      if (j >= 0) ir(j);
+    }
+    function retroceder() {
+      var j = vecina(lista, estado.actual, -1, estado.publico);
+      if (j >= 0) ir(j);
+    }
 
     function esControl(el) {
       for (var n = el; n && n !== raiz; n = n.parentNode) {
@@ -539,7 +689,7 @@
       if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') avanzar();
       else if (k === 'ArrowLeft' || k === 'PageUp') retroceder();
       else if (k === 'Home') ir(0);
-      else if (k === 'End') ir(lista.length - 1);
+      else if (k === 'End') ir(lista.length - 1); // los créditos: los ven todos los públicos
       else if (k === 'Escape') win.location.hash = '#lectura';
       else hecho = false;
       if (hecho && ev.preventDefault) ev.preventDefault();
@@ -562,6 +712,8 @@
     });
 
     win.addEventListener('hashchange', alHash);
+    pintarGuia();
+    pintarPublico();
     alHash();
 
     return {
@@ -576,7 +728,8 @@
 
   var API = {
     version: VERSION, aplanar: aplanar, hashDe: hashDe, leerHash: leerHash, cifra: cifra, lineaDe: lineaDe,
-    tramo: tramo, poseDe: poseDe, dichoDe: dichoDe, fraseGato: fraseGato, leerDatos: leerDatos, crear: crear
+    tramo: tramo, poseDe: poseDe, dichoDe: dichoDe, fraseGato: fraseGato, leerDatos: leerDatos, crear: crear,
+    visible: visible, textoDe: textoDe, vecina: vecina, leerQuery: leerQuery, armarQuery: armarQuery, espera: espera
   };
 
   if (typeof module !== 'undefined' && module.exports) { module.exports = API; return; }
