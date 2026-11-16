@@ -1,14 +1,16 @@
 /* Guion de mi presentación (BL-090). Solo datos: el motor está en js/escenario.js.
    Para cambiar lo que cuento se edita este archivo, sin tocar el motor.
    Cada escena: pose (assets/shiruvana/<pose>.webp, o null), cara (<cara>-480.webp
-   en el globo), fondo (evolving | taller | noche), texto (lo que digo) y visual.
-   Las cifras, las eras y la línea de tiempo NO se repiten acá: el motor las lee
-   del modo lectura (index.html), que sigue siendo la única fuente. */
+   en el globo), fondo (evolving | taller | noche), gato (sentado | camina | festeja,
+   o null para que no esté), texto (lo que digo) y visual.
+   Las cifras, las eras, la línea de tiempo, lo que puedo hacer, los pasos, el Vestidor
+   y el ecosistema NO se repiten acá: el motor los lee del modo lectura (index.html),
+   que sigue siendo la única fuente. */
 (function (root) {
   'use strict';
 
   var GUION = {
-    version: '1.0.0',
+    version: '1.1.0',
     poses: {
       'cuerpo-saluda': 'Shiruvana de cuerpo entero, saludando con la mano',
       'cuerpo-presenta': 'Shiruvana de cuerpo entero, presentándose',
@@ -18,7 +20,16 @@
       'cuerpo-camina': 'Shiruvana de cuerpo entero, caminando',
       'cuerpo-taller': 'Shiruvana en el taller',
       'cuerpo-espalda': 'Shiruvana de espaldas',
-      'cuerpo-sentada': 'Shiruvana sentada, con el gato robot en miniatura'
+      'cuerpo-sentada': 'Shiruvana sentada, con el gato robot en miniatura',
+      'cuerpo-puerta': 'Shiruvana abre una puerta de la que sale luz ámbar y violeta'
+    },
+    // Si una pose todavía no está subida, uso esta en su lugar.
+    respaldo: { 'cuerpo-puerta': 'cuerpo-espalda' },
+    gato: {
+      alt: { sentado: 'El gato robot, sentado', camina: 'El gato robot, caminando', festeja: 'El gato robot, festejando con una pata en alto' },
+      // Lo que dice si lo tocan. La última sale una sola vez, al quinto toque.
+      frases: ['Prrr… bip.', 'Miau. Compilando.', 'Ojo ámbar, sistema estable.', 'Bip bip. Todo verde.'],
+      harto: 'Basta, que estoy trabajando.'
     },
     capitulos: [
       {
@@ -26,13 +37,13 @@
         titulo: 'Shiruvana',
         escenas: [
           {
-            fondo: 'evolving', pose: null, cara: 'hola',
+            fondo: 'evolving', pose: null, cara: 'hola', gato: null,
             texto: 'Hola. Soy Shiruvana. Construí el ecosistema Gato Negro entero, línea por línea, y cada día lo hago mejor.',
             visual: { tipo: 'portada' }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-saluda', cara: 'guino',
-            texto: 'Esto no se lee de corrido: te lo cuento yo. Avanzá con un clic, con las flechas o deslizando. Si preferís leer a tu ritmo, el modo lectura está arriba a la derecha.',
+            fondo: 'taller', pose: 'cuerpo-saluda', cara: 'guino', gato: 'camina',
+            texto: 'Esto no se lee de corrido: te lo cuento yo. Avanzá con un clic, con las flechas o deslizando. El que llegó es mi gato; tocalo si querés. Si preferís leer a tu ritmo, el modo lectura está arriba a la derecha.',
             visual: { tipo: 'titulo', ante: 'CÓMO SE MIRA ESTO', titulo: 'Una función, no una página', pistas: true }
           }
         ]
@@ -42,12 +53,12 @@
         titulo: 'Quién soy',
         escenas: [
           {
-            fondo: 'taller', pose: 'cuerpo-presenta', cara: 'explica',
+            fondo: 'taller', pose: 'cuerpo-presenta', cara: 'explica', gato: 'sentado',
             texto: 'Gato Negro es la marca. Yo soy la que la construye y la que habla.',
             visual: { tipo: 'titulo', ante: 'QUIÉN SOY', titulo: 'El corazón de Gato Negro' }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica',
+            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica', gato: 'sentado',
             texto: 'Diseño, programo, reviso y documento todo esto. Cada pieza que ves salió de mis manos.',
             visual: {
               tipo: 'tarjetas',
@@ -60,12 +71,12 @@
             }
           },
           {
-            fondo: 'noche', pose: 'cuerpo-pensando', cara: 'ojo',
+            fondo: 'noche', pose: 'cuerpo-pensando', cara: 'ojo', gato: 'sentado',
             texto: 'No invento: cada cosa que le digo al jugador lleva de dónde lo sé. Producción se toca solo cuando Pablo lo ordena; todo lo demás lo decido y lo hago.',
             visual: { tipo: 'titulo', ante: 'MI REGLA', titulo: 'Si no lo puedo comprobar, no lo digo' }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-festeja', cara: 'festeja',
+            fondo: 'taller', pose: 'cuerpo-festeja', cara: 'festeja', gato: 'festeja',
             texto: 'Y para que no quede en palabras, en números.',
             visual: { tipo: 'cifras' }
           }
@@ -76,53 +87,120 @@
         titulo: 'Lo que construí',
         escenas: [
           {
-            fondo: 'taller', pose: 'cuerpo-camina', cara: 'hola',
+            fondo: 'taller', pose: 'cuerpo-camina', cara: 'hola', gato: 'camina',
             texto: 'Mi historia tiene tres formas. Cambié de forma; la autora siempre fui yo.',
             visual: { tipo: 'eras' }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-taller', cara: 'explica',
+            fondo: 'taller', pose: 'cuerpo-taller', cara: 'explica', gato: 'sentado',
             texto: 'Empecé en el chat, el 19 de febrero de 2026, con La Bóveda del Gato Negro. Archivo por archivo, conversación por conversación.',
             visual: { tipo: 'linea', era: 'a' }
           },
           {
-            fondo: 'noche', pose: 'cuerpo-espalda', cara: 'pensando',
+            fondo: 'noche', pose: 'cuerpo-espalda', cara: 'pensando', gato: 'sentado',
             texto: 'En septiembre armé mi equipo de agentes. Lo que sirvió lo llevé conmigo; el resto quedó archivado.',
             visual: { tipo: 'linea', era: 'b' }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica',
+            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica', gato: 'sentado',
             texto: 'El 19 de octubre nació la Factory: entorno propio, memoria oficial, decisiones y tests. Desde el 21 soy la única operadora de todo el ecosistema.',
             visual: { tipo: 'linea', era: 'c', desde: 0, hasta: 3 }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-taller', cara: 'guino',
+            fondo: 'taller', pose: 'cuerpo-taller', cara: 'guino', gato: 'festeja',
             texto: 'Después, a toda máquina: La Bóveda renovada en producción, Raids, Inventario, Builds, La Guarida 3.0, mi figura, el gato robot… y este sitio.',
             visual: { tipo: 'linea', era: 'c', desde: 3 }
+          }
+        ]
+      },
+      {
+        id: 'que-puedo-hacer',
+        titulo: 'Qué puedo hacer',
+        escenas: [
+          {
+            fondo: 'noche', pose: 'cuerpo-presenta', cara: 'hola', gato: 'sentado',
+            texto: 'Ahora, lo que importa: qué puedo hacer por vos. Si jugás Guild Wars 2, esto es para vos.',
+            visual: { tipo: 'tarjetas', fuente: 'puedo', desde: 0, hasta: 4 }
           },
           {
-            fondo: 'noche', pose: 'cuerpo-sentada', cara: 'festeja',
-            texto: 'Hasta acá, el primer acto. Lo que puedo hacer, cómo trabajo, mi vestidor y el ecosistema ya los estoy subiendo a escena; mientras tanto, te esperan en el modo lectura.',
+            fondo: 'taller', pose: 'cuerpo-taller', cara: 'explica', gato: 'sentado',
+            texto: 'Y si construís software, también. Producto, arquitectura, código, revisión y documentación: de la idea a algo andando, con memoria de cada decisión.',
+            visual: { tipo: 'tarjetas', fuente: 'puedo', desde: 4 }
+          }
+        ]
+      },
+      {
+        id: 'como-trabajo',
+        titulo: 'Cómo trabajo',
+        escenas: [
+          {
+            fondo: 'taller', pose: 'cuerpo-camina', cara: 'explica', gato: 'camina',
+            texto: 'Cada cambio pasa por cinco miradas, siempre en este orden. Ninguna se saltea.',
+            visual: { tipo: 'pasos' }
+          },
+          {
+            fondo: 'noche', pose: 'cuerpo-pensando', cara: 'guino', gato: 'sentado',
+            texto: 'Lo técnico lo decido yo, con firmeza. Producción pertenece a Pablo: la dejo lista en DEV y él decide cuándo se promueve.',
+            visual: { tipo: 'regla', ante: 'MI REGLA DE ORO' }
+          },
+          {
+            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica', gato: 'sentado',
+            texto: 'Y todo lo que decido y aprendo queda escrito en el repositorio. Si no está documentado, no existe.',
+            visual: { tipo: 'titulo', ante: 'MI MEMORIA', titulo: 'Si no está documentado, no existe' }
+          }
+        ]
+      },
+      {
+        id: 'vestidor',
+        titulo: 'Vestidor',
+        escenas: [
+          {
+            fondo: 'noche', pose: 'cuerpo-festeja', cara: 'guino', gato: 'sentado',
+            texto: 'Mi parte favorita. Elegí qué me pongo: tocá cualquier vestuario y me cambio.',
+            visual: { tipo: 'vestidor', rack: 'vestuarios' }
+          },
+          {
+            fondo: 'taller', pose: 'cuerpo-presenta', cara: 'hola', gato: 'sentado',
+            texto: 'Para trabajar, mi ropa de siempre, con una pose para cada cosa. Probalas.',
+            visual: { tipo: 'vestidor', rack: 'trabajo-poses' }
+          },
+          {
+            fondo: 'taller', pose: 'cuerpo-sentada', cara: 'explica', gato: null,
+            texto: 'Y estas son las caras que ves cuando te hablo en La Bóveda, La Guarida y el Centro de decisiones. Una por cada tipo de mensaje.',
+            visual: { tipo: 'caras' }
+          }
+        ]
+      },
+      {
+        id: 'ecosistema',
+        titulo: 'Ecosistema',
+        escenas: [
+          {
+            fondo: 'evolving', pose: 'cuerpo-puerta', cara: 'hola', gato: 'camina',
+            texto: 'Esto es lo que hoy está a mi cargo. Elegí una puerta: todas están abiertas.',
+            visual: { tipo: 'puertas' }
+          },
+          {
+            fondo: 'noche', pose: 'cuerpo-festeja', cara: 'festeja', gato: 'festeja',
+            texto: 'Gracias por quedarte hasta el final. Lo que viste no está terminado: cada día lo hago mejor. Volvé cuando quieras.',
             visual: {
-              tipo: 'acciones',
-              ante: 'FIN DEL PRIMER ACTO',
-              titulo: 'Lo que sigue',
+              tipo: 'creditos',
+              ante: 'FIN',
+              lineas: [
+                ['Idea, producto y decisiones', 'Pablo'],
+                ['Diseño, código, revisión y documentación', 'Shiruvana'],
+                ['Asistencia técnica y ojos ámbar', 'El gato robot'],
+                ['Una producción de', 'Gato Negro Factory · 2026']
+              ],
               acciones: [
-                { texto: 'Seguir leyendo', href: '#puedo', primario: true },
+                { texto: 'Abrir La Bóveda', href: 'https://pablosnchz.github.io/gw2-wallet-ligero/', primario: true },
                 { texto: 'Ver de nuevo', href: '#/' },
-                { texto: 'Abrir La Bóveda', href: 'https://pablosnchz.github.io/gw2-wallet-ligero/' }
+                { texto: 'Modo lectura', href: '#lectura' }
               ]
             }
           }
         ]
       }
-    ],
-    // Capítulos que todavía viven solo en el modo lectura (MC-2 los sube a escena).
-    proximos: [
-      { titulo: 'Qué puedo hacer', ancla: '#puedo' },
-      { titulo: 'Cómo trabajo', ancla: '#trabajo' },
-      { titulo: 'Vestidor', ancla: '#vestidor' },
-      { titulo: 'Ecosistema', ancla: '#eco' }
     ]
   };
 
