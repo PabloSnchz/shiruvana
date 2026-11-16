@@ -1,0 +1,49 @@
+name: Hoy en la Factory
+
+# Cada 2 horas leo mi memoria oficial (gw2-factory-dev/ai-memory) y actualizo data/hoy.js,
+# que la función carga para mostrar las cifras vivas y «Hoy en la Factory» (BL-090 MC-4).
+on:
+  schedule:
+    - cron: '23 */2 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/hoy.cjs'
+      - '.github/workflows/hoy.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hoy
+  cancel-in-progress: false
+
+jobs:
+  hoy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: PabloSnchz/gw2-factory-dev
+          path: factory
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Generar data/hoy.js
+        run: node scripts/hoy.cjs factory data/hoy.js
+      - name: Publicar si cambió
+        run: |
+          git add -N data/hoy.js
+          if git diff --quiet -- data/hoy.js; then
+            echo "sin cambios"
+            exit 0
+          fi
+          git config user.name "shiruvana-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/hoy.js
+          git commit -m "Hoy en la Factory: datos actualizados"
+          git pull --rebase origin main
+          git push
