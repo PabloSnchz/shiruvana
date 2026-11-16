@@ -1,4 +1,4 @@
-/* Escenario 1.0.0 — mi presentación por escenas (BL-090 MC-1).
+/* Escenario 1.1.0 — mi presentación por escenas (BL-090 MC-1 y MC-2).
    Solo actúa con html.funcion; sin esa clase el sitio es el modo lectura de siempre. */
 
 #escenario { display: none; }
@@ -76,7 +76,6 @@ html.funcion #escenario {
 }
 .st-cap:hover { color: var(--text); border-color: var(--border); }
 .st-cap.activo { color: #111; background: var(--amber); font-weight: 700; }
-.st-cap.pronto { opacity: .55; }
 .st-lectura {
   white-space: nowrap; font-size: .85rem; color: var(--text); text-decoration: none;
   padding: 7px 14px; border-radius: 10px; border: 1px solid var(--border); background: rgba(21,21,29,.7);
@@ -136,6 +135,95 @@ html.funcion #escenario {
 }
 .st-btn.primario { background: #5A3DDB; border-color: #5A3DDB; }
 .st-btn:hover { border-color: var(--amber); }
+
+/* Cómo trabajo: los cinco pasos se encienden en orden */
+.v-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: p; }
+.v-pasos li {
+  position: relative; counter-increment: p; display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; align-items: center;
+  padding: 10px 14px; border-radius: var(--r); border: 1px solid var(--border); background: rgba(21,21,29,.86);
+  animation: st-enciende .6s calc(.15s + var(--i) * .35s) cubic-bezier(.2,.8,.2,1) both;
+}
+.v-pasos li::before {
+  content: counter(p); grid-row: span 2; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  background: var(--panel-2); color: var(--amber); font-weight: 800; box-shadow: 0 0 0 2px var(--amber), 0 0 14px rgba(232,179,75,.4);
+}
+.v-pasos li + li::after { content: ""; position: absolute; left: 31px; top: -11px; width: 2px; height: 10px; background: var(--amber); opacity: .6; }
+.v-pasos b { font-size: 1.05rem; }
+.v-pasos span { font-size: .9rem; color: var(--muted); }
+
+.v-regla blockquote {
+  margin: 0; padding: 18px 22px; border-left: 4px solid var(--amber); border-radius: 0 var(--r) var(--r) 0;
+  background: rgba(21,21,29,.86); font-size: clamp(1.2rem, 2.4vw, 1.7rem); line-height: 1.35; font-weight: 700;
+}
+
+/* Vestidor: perchas que me cambian la ropa */
+.v-perchas { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; max-width: 620px; }
+.v-percha {
+  display: grid; gap: 4px; padding: 6px; border-radius: 12px; cursor: pointer; font: inherit; color: var(--text);
+  border: 1px solid var(--border); background: rgba(21,21,29,.86);
+  animation: st-sube .45s calc(var(--i) * .06s) both;
+}
+.v-percha img { display: block; width: 100%; height: auto; aspect-ratio: 2/3; object-fit: contain; object-position: bottom; background: #000; border-radius: 8px; }
+.v-percha span { font-size: .72rem; line-height: 1.2; text-align: center; }
+.v-percha:hover { border-color: var(--amber); }
+.v-percha[aria-pressed="true"] { border-color: var(--amber); box-shadow: 0 0 0 2px var(--amber), 0 0 18px rgba(232,179,75,.35); }
+
+.v-caras { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px; max-width: 640px; }
+.v-caras figure { margin: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: rgba(21,21,29,.86); animation: st-sube .5s calc(var(--i) * .09s) both; }
+.v-caras img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; object-position: top; background: #000; }
+.v-caras figcaption { padding: 6px 8px; font-size: .78rem; }
+.v-caras figcaption span { display: block; color: var(--muted); font-size: .7rem; }
+
+/* Ecosistema: puertas que se abren */
+.v-puertas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; perspective: 900px; }
+.v-puerta {
+  display: block; padding: 16px; border-radius: var(--r); color: var(--text); text-decoration: none;
+  border: 1px solid var(--border); background: linear-gradient(135deg, rgba(28,28,38,.95), rgba(21,21,29,.86));
+  transform-origin: left center; animation: st-puerta .8s calc(.1s + var(--i) * .15s) cubic-bezier(.2,.8,.2,1) both;
+}
+.v-puerta b { display: block; font-size: 1.05rem; margin-bottom: 4px; }
+.v-puerta span { font-size: .88rem; color: var(--muted); }
+.v-puerta::after { content: "Entrar →"; display: block; margin-top: 10px; font-size: .8rem; font-weight: 700; color: var(--amber); }
+.v-puerta.amber { border-left: 3px solid var(--amber); } .v-puerta.violet { border-left: 3px solid var(--violet); } .v-puerta.teal { border-left: 3px solid var(--teal); }
+.v-puerta:hover, .v-puerta:focus-visible { border-color: var(--amber); box-shadow: 0 0 22px rgba(232,179,75,.25); }
+
+/* Créditos de cierre */
+.v-creditos dl { margin: 0; display: grid; gap: 14px; }
+.v-creditos dl > div { animation: st-sube .7s calc(.2s + var(--i) * .45s) both; }
+.v-creditos dt { font-size: .78rem; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.v-creditos dd { margin: 2px 0 0; font-size: clamp(1.3rem, 2.6vw, 1.9rem); font-weight: 800; }
+.v-creditos .st-btn { animation-delay: calc(.4s + var(--i) * .3s); }
+
+/* ---------- el gato robot, sentado sobre el globo ---------- */
+.st-gato {
+  position: absolute; bottom: calc(100% - 14px); right: 18px; z-index: 1;
+  width: clamp(84px, 9vw, 132px); padding: 0; border: 0; background: none; cursor: pointer;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.5));
+  animation: st-gato-entra .5s cubic-bezier(.2,.8,.2,1) both;
+}
+.st-gato[hidden] { display: none; }
+.st-gato img { display: block; width: 100%; height: auto; }
+.st-gato.g-camina { animation: st-gato-camina .9s cubic-bezier(.2,.8,.2,1) both; }
+.st-gato.g-festeja img { animation: st-gato-salta .6s ease both; }
+.st-gato:hover img { transform: translateY(-3px); }
+.st-gato-dice {
+  position: absolute; bottom: calc(100% + 40px); right: calc(18px + clamp(84px, 9vw, 132px)); z-index: 2;
+  max-width: 220px; padding: 6px 12px; border-radius: 12px; font-size: .85rem; font-weight: 600; white-space: nowrap;
+  color: #111; background: var(--amber); box-shadow: 0 6px 18px rgba(0,0,0,.4);
+  opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.st-gato-dice:empty { display: none; }
+.st-globo.gato-habla .st-gato-dice { opacity: 1; transform: none; }
+
+/* ---------- cambio de capítulo ---------- */
+.st-cortina {
+  position: absolute; inset: 0; z-index: 25; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  background: linear-gradient(100deg, rgba(11,11,16,0) 0%, rgba(11,11,16,.96) 18%, rgba(11,11,16,.96) 82%, rgba(11,11,16,0) 100%);
+  animation: st-cortina 1.25s cubic-bezier(.7,0,.3,1) both;
+}
+.st-cortina span { font-size: .9rem; letter-spacing: .4em; color: var(--amber); font-weight: 700; }
+.st-cortina b { font-size: clamp(2rem, 6vw, 4rem); font-weight: 800; letter-spacing: .02em; text-shadow: 0 0 28px rgba(155,130,255,.45); }
 
 /* ---------- yo, en escena ---------- */
 .st-pj { grid-area: pj; position: relative; z-index: 2; min-height: 0; pointer-events: none; }
@@ -205,6 +293,22 @@ html.funcion #escenario {
   .st-cara { width: 40px; height: 40px; }
   .st-pie { padding: 6px 12px 12px; gap: 10px; }
   .st-cuenta { display: none; }
+  .v-perchas { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; max-width: 64vw; }
+  .v-percha { padding: 3px; }
+  .v-percha span { display: none; }
+  .v-caras { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; max-width: 70vw; }
+  .v-caras figcaption span { display: none; }
+  .v-puertas { grid-template-columns: minmax(0, 1fr); gap: 8px; max-width: 62vw; }
+  .v-puerta { padding: 10px 12px; }
+  .v-puerta span { display: none; }
+  .v-pasos { max-width: 64vw; gap: 6px; }
+  .v-pasos li { padding: 6px 10px; grid-template-columns: 30px 1fr; }
+  .v-pasos li::before { width: 28px; height: 28px; }
+  .v-pasos span { font-size: .78rem; }
+  .v-pasos li + li::after { left: 24px; }
+  .v-creditos dd { font-size: 1.15rem; }
+  .st-gato { width: 74px; right: 10px; }
+  .st-gato-dice { right: 90px; bottom: calc(100% + 26px); }
 }
 @media (max-height: 560px) {
   .st-pose { height: 78vh; }
@@ -228,4 +332,10 @@ html.funcion #escenario {
 @keyframes st-brilla { from { text-shadow: 0 0 18px rgba(232,179,75,.35); } to { text-shadow: 0 0 36px rgba(232,179,75,.65); } }
 @keyframes st-carga { from { right: 100%; } to { right: 38%; } }
 @keyframes st-chispa { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: .7; } 80% { opacity: .5; } 100% { transform: translateY(-105vh); opacity: 0; } }
+@keyframes st-enciende { from { opacity: 0; transform: translateX(-16px); filter: brightness(.4); } 60% { filter: brightness(1.4); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes st-puerta { from { opacity: 0; transform: rotateY(-70deg); } to { opacity: 1; transform: none; } }
+@keyframes st-gato-entra { from { opacity: 0; transform: translateY(14px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes st-gato-camina { from { opacity: 0; transform: translateX(-160px); } 70% { opacity: 1; } to { opacity: 1; transform: none; } }
+@keyframes st-gato-salta { 0%, 100% { transform: none; } 40% { transform: translateY(-14px) rotate(-4deg); } }
+@keyframes st-cortina { 0% { transform: translateX(-100%); opacity: 1; } 35%, 65% { transform: none; opacity: 1; } 100% { transform: translateX(100%); opacity: 1; } }
 @keyframes st-parpadeo { 0% { transform: scaleY(0); } 40% { transform: scaleY(1); } 55% { transform: scaleY(.1); } 70%, 100% { transform: scaleY(1); } }
