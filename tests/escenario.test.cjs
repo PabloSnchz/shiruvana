@@ -80,7 +80,16 @@ function montar({ hash = '', reducido = false } = {}) {
       { era: 'a', fecha: '2026-02-19', titulo: 'Nace La Bóveda', texto: '', ref: '' },
       { era: 'b', fecha: '2026-09-26', titulo: 'Agentes', texto: '', ref: '' },
       ...[19, 20, 21, 22, 24, 30, 31].map((d) => ({ era: 'c', fecha: '2026-10-' + d, titulo: 'F' + d, texto: '', ref: '' }))
-    ]
+    ],
+    puedo: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'].map((t) => ({ titulo: t, texto: 'x', color: 'teal' })),
+    pasos: ['Producto', 'Arquitectura', 'Desarrollo', 'Revisión', 'Documentación'].map((t) => ({ titulo: t, texto: 'y' })),
+    regla: 'Producción pertenece a Pablo.',
+    racks: {
+      'trabajo-poses': [{ src: 'assets/shiruvana/cuerpo-taller.webp', alt: 'En el taller', ancho: '720', alto: '960', titulo: 'En el taller', sub: 'Construyendo' }],
+      vestuarios: ['gala', 'neon', 'pijama'].map((n) => ({ src: 'assets/shiruvana/vestuario-' + n + '.webp', alt: 'Vestida ' + n, ancho: '640', alto: '954', titulo: n.toUpperCase(), sub: 'Ocasión ' + n })),
+      caras: ['hola', 'ojo'].map((n) => ({ src: 'assets/shiruvana/' + n + '-480.webp', alt: n, ancho: '480', alto: '640', titulo: n, sub: 's' }))
+    },
+    eco: [{ href: 'https://a/', titulo: 'La Bóveda', texto: 't', color: 'amber' }, { href: 'https://b/', titulo: 'La Guarida', texto: 't', color: 'teal' }]
   };
   const api = E.crear({ doc, win, raiz, guion: GUION, datos });
   const tecla = (key, target = raiz) => (doc.listeners.keydown || []).forEach((f) => f({ key, target, preventDefault() {} }));
@@ -89,18 +98,40 @@ function montar({ hash = '', reducido = false } = {}) {
 }
 
 // ---------- el guion ----------
-test('guion: 3 capítulos en escena, ids únicos, cada escena con texto y visual conocido', () => {
-  assert.deepEqual(GUION.capitulos.map((c) => c.id), ['entrada', 'quien-soy', 'lo-que-construi']);
-  const tipos = ['portada', 'titulo', 'tarjetas', 'cifras', 'eras', 'linea', 'acciones'];
+test('guion: los 7 capítulos en escena, en orden, cada escena con texto, fondo, gato y visual conocidos', () => {
+  assert.deepEqual(GUION.capitulos.map((c) => c.id), ['entrada', 'quien-soy', 'lo-que-construi', 'que-puedo-hacer', 'como-trabajo', 'vestidor', 'ecosistema']);
+  const tipos = ['portada', 'titulo', 'tarjetas', 'cifras', 'eras', 'linea', 'acciones', 'pasos', 'regla', 'vestidor', 'caras', 'puertas', 'creditos'];
   for (const cap of GUION.capitulos) {
     assert.ok(cap.escenas.length >= 2, cap.id);
     for (const esc of cap.escenas) {
       assert.ok(esc.texto && esc.texto.length > 20, cap.id + ': texto');
       assert.ok(tipos.includes(esc.visual.tipo), cap.id + ': ' + esc.visual.tipo);
       assert.ok(['evolving', 'taller', 'noche'].includes(esc.fondo), cap.id + ': fondo ' + esc.fondo);
+      assert.ok([null, 'sentado', 'camina', 'festeja'].includes(esc.gato), cap.id + ': gato ' + esc.gato);
+      if (esc.visual.tipo === 'tarjetas') assert.ok(esc.visual.items || esc.visual.fuente === 'puedo', 'tarjetas sin fuente');
+      if (esc.visual.tipo === 'vestidor') assert.ok(['vestuarios', 'trabajo-poses'].includes(esc.visual.rack), esc.visual.rack);
     }
   }
-  assert.deepEqual(GUION.proximos.map((p) => p.ancla), ['#puedo', '#trabajo', '#vestidor', '#eco']);
+  assert.equal(GUION.proximos, undefined, 'ya no queda ningún capítulo fuera de escena');
+  const fin = GUION.capitulos.at(-1).escenas.at(-1);
+  assert.equal(fin.visual.tipo, 'creditos');
+  assert.deepEqual(fin.visual.acciones.map((a) => a.href).slice(1), ['#/', '#lectura']);
+  const puedo = GUION.capitulos[3].escenas.map((e) => e.visual);
+  assert.deepEqual(puedo.map((v) => [v.desde, v.hasta]), [[0, 4], [4, undefined]], 'las 6 cartas, sin repetir ni saltear');
+});
+
+test('guion del gato: imágenes, alt de cada pose, frases y una sola salida de tono', () => {
+  for (const p of ['sentado', 'camina', 'festeja']) {
+    assert.ok(fs.existsSync(path.join(ROOT, 'assets/gato/gato-' + p + '.webp')), 'falta gato-' + p);
+    assert.ok(GUION.gato.alt[p], 'alt ' + p);
+  }
+  assert.ok(GUION.gato.frases.length >= 3);
+  assert.equal(E.fraseGato(GUION.gato, 1), GUION.gato.frases[0]);
+  assert.equal(E.fraseGato(GUION.gato, 4), GUION.gato.frases[3]);
+  assert.equal(E.fraseGato(GUION.gato, 5), GUION.gato.harto);
+  assert.equal(E.fraseGato(GUION.gato, 6), GUION.gato.frases[0], 'después vuelve a empezar');
+  assert.equal(E.fraseGato(GUION.gato, 9), GUION.gato.frases[3]);
+  assert.equal(E.fraseGato(GUION.gato, 10), GUION.gato.frases[0], 'el «basta» no se repite');
 });
 
 test('guion: hablo en primera persona y nunca de mí en tercera', () => {
@@ -121,9 +152,22 @@ test('guion: toda pose y toda cara existen en assets y las poses tienen alt', ()
 });
 
 test('las anclas que uso existen en el modo lectura', () => {
-  const anclas = [...GUION.proximos.map((p) => p.ancla), ...GUION.capitulos.flatMap((c) => c.escenas)
-    .filter((e) => e.visual.acciones).flatMap((e) => e.visual.acciones.map((a) => a.href)).filter((h) => /^#[^/]/.test(h))];
+  const anclas = GUION.capitulos.flatMap((c) => c.escenas)
+    .filter((e) => e.visual.acciones).flatMap((e) => e.visual.acciones.map((a) => a.href)).filter((h) => /^#[^/]/.test(h) && h !== '#lectura');
   for (const a of anclas) assert.match(HTML, new RegExp('<section id="' + a.slice(1) + '"'), a);
+  for (const r of ['trabajo-poses', 'vestuarios', 'caras']) assert.match(HTML, new RegExp('id="' + r + '"'), r);
+});
+
+test('lo que leo de los otros capítulos está en el modo lectura: 6 cartas, 5 pasos, 1 regla, 9+9+7 figuras, 5 puertas', () => {
+  const sec = (id) => HTML.slice(HTML.indexOf('<section id="' + id + '">'), HTML.indexOf('</section>', HTML.indexOf('<section id="' + id + '">')));
+  assert.equal((sec('puedo').match(/<div class="card (amber|violet|teal)">/g) || []).length, 6);
+  assert.equal((sec('trabajo').match(/<div class="step">/g) || []).length, 5);
+  assert.equal((sec('trabajo').match(/<p class="rule">/g) || []).length, 1);
+  assert.equal((sec('vestidor').match(/<figure class="pose">/g) || []).length, 25);
+  const caras = sec('vestidor').slice(sec('vestidor').indexOf('id="caras"'));
+  assert.equal((caras.match(/<figure class="pose">/g) || []).length, 7);
+  assert.equal((sec('eco').match(/<a class="card (amber|violet|teal)" href="https?:\/\/[^"]+">/g) || []).length, 5);
+  for (const f of sec('vestidor').match(/<figure class="pose">.*?<\/figure>/g)) assert.match(f, /<figcaption>[^<]+<span>[^<]+<\/span><\/figcaption>/, 'figcaption con título y bajada');
 });
 
 test('los datos que leo del modo lectura están: 5 cifras, 3 eras, 12 hitos (4 chat, 1 agentes, 7 Factory)', () => {
@@ -156,6 +200,33 @@ test('leerDatos arma cifras, eras y hitos desde el DOM', () => {
   assert.deepEqual(d.eras, [{ era: 'a', titulo: 'En el chat', texto: 'x' }]);
   assert.equal(d.linea[0].era, 'a'); assert.equal(d.linea[0].ref, 'r');
   assert.equal(d.linea[1].era, 'b'); assert.equal(d.linea[1].ref, '');
+  assert.deepEqual(d.puedo, []); assert.equal(d.regla, ''); assert.deepEqual(d.racks.vestuarios, []);
+});
+
+test('leerDatos arma cartas, pasos, regla, figuras del Vestidor y puertas desde el DOM', () => {
+  const t = (s) => ({ textContent: s });
+  const nodo = (cls, hijos, extra = {}) => ({ className: cls, textContent: extra.texto || '', getAttribute: (k) => (extra.attrs || {})[k] || null, querySelector: (s) => hijos[s] || null });
+  const img = (attrs) => ({ getAttribute: (k) => attrs[k] || null });
+  const fig = (src, titulo, sub) => nodo('pose', {
+    img: img({ src, alt: 'alt ' + titulo, width: '640', height: '954' }),
+    figcaption: { textContent: titulo + sub, querySelector: (s) => (s === 'span' ? t(sub) : null) }
+  });
+  const doc = { querySelectorAll: (s) => ({
+    '#puedo .card': [nodo('card violet', { h3: t('Hablarte'), p: t('Con fundamento') })],
+    '#trabajo .step': [nodo('step', { b: t('Producto'), span: t('¿Qué resuelve?') })],
+    '#trabajo .rule': [nodo('rule', {}, { texto: ' Producción es de Pablo. ' })],
+    '#vestuarios .pose': [fig('assets/shiruvana/vestuario-gala.webp', 'Gala', 'Ocasiones especiales')],
+    '#eco a.card': [nodo('card teal', { h3: t('La Guarida'), p: t('Inicio') }, { attrs: { href: 'https://g/' } })]
+  }[s] || []) };
+  const d = E.leerDatos(doc);
+  assert.deepEqual(d.puedo, [{ titulo: 'Hablarte', texto: 'Con fundamento', color: 'violet' }]);
+  assert.deepEqual(d.pasos, [{ titulo: 'Producto', texto: '¿Qué resuelve?' }]);
+  assert.equal(d.regla, 'Producción es de Pablo.');
+  assert.deepEqual(d.racks.vestuarios, [{ src: 'assets/shiruvana/vestuario-gala.webp', alt: 'alt Gala', ancho: '640', alto: '954', titulo: 'Gala', sub: 'Ocasiones especiales' }]);
+  assert.deepEqual(d.eco, [{ href: 'https://g/', titulo: 'La Guarida', texto: 'Inicio', color: 'teal' }]);
+  assert.equal(E.poseDe('assets/shiruvana/vestuario-gala.webp'), 'vestuario-gala');
+  assert.equal(E.dichoDe({ titulo: 'Gala', sub: 'Ocasiones especiales' }), 'Gala: ocasiones especiales.');
+  assert.deepEqual(E.tramo([1, 2, 3, 4, 5, 6], { desde: 4 }), [5, 6]);
 });
 
 // ---------- rutas ----------
@@ -253,7 +324,8 @@ test('modo lectura y vuelta: #puedo va a la sección; #/ vuelve a empezar; las t
 test('cada capítulo marca su pastilla y la escena de cifras y de hitos usa los datos de lectura', () => {
   const m = montar({ hash: '#/quien-soy/4' });
   const pills = m.raiz.porClase('st-cap');
-  assert.equal(pills.length, GUION.capitulos.length + GUION.proximos.length);
+  assert.equal(pills.length, GUION.capitulos.length);
+  assert.equal(m.raiz.porClase('pronto').length, 0);
   assert.equal(pills[1].getAttribute('aria-current'), 'step');
   assert.equal(pills[0].getAttribute('aria-current'), null);
   assert.equal(m.raiz.porClase('v-cifra').length, 2);
@@ -271,6 +343,129 @@ test('movimiento reducido: sin tipeo, sin ojos, texto completo al instante', () 
   assert.equal(m.raiz.porClase('st-ojos').length, 0);
   m.api.avanzar();
   assert.equal(m.api.estado.actual, 1, 'sin tipeo, un toque ya avanza');
+});
+
+// ---------- MC-2: gato, Vestidor, cortina y los capítulos nuevos ----------
+const ir = (m, hash) => { m.win.location.hash = hash; m.flush(); };
+const gato = (m) => m.raiz.porClase('st-gato')[0];
+const gatoImg = (m) => gato(m).children[0];
+
+test('el gato: no está en la portada, llega en la escena 2, cambia de pose y se va cuando el guion dice null', () => {
+  const m = montar();
+  assert.notEqual(gato(m).getAttribute('hidden'), null, 'en la portada no está');
+  ir(m, '#/entrada/2');
+  assert.equal(gato(m).getAttribute('hidden'), null);
+  assert.equal(gatoImg(m).getAttribute('src'), 'assets/gato/gato-camina.webp');
+  assert.ok(gato(m).classList.contains('g-camina'));
+  assert.equal(gatoImg(m).getAttribute('alt'), GUION.gato.alt.camina);
+  ir(m, '#/quien-soy/1');
+  assert.equal(gatoImg(m).getAttribute('src'), 'assets/gato/gato-sentado.webp');
+  ir(m, '#/vestidor/3');
+  assert.notEqual(gato(m).getAttribute('hidden'), null, 'en las caras se baja del globo');
+});
+
+test('tocar al gato: habla, festeja, no avanza la escena y al quinto toque se harta', () => {
+  const m = montar({ hash: '#/quien-soy/1' });
+  m.flush();
+  const dice = m.raiz.porClase('st-gato-dice')[0];
+  gato(m).emitir('click');
+  assert.equal(m.api.estado.actual, 2, 'tocar al gato no avanza');
+  assert.equal(dice.textContent, GUION.gato.frases[0]);
+  assert.equal(gatoImg(m).getAttribute('src'), 'assets/gato/gato-festeja.webp');
+  assert.ok(m.raiz.porClase('st-globo')[0].classList.contains('gato-habla'));
+  m.flush();
+  assert.equal(dice.textContent, '', 'se calla solo');
+  assert.equal(gatoImg(m).getAttribute('src'), 'assets/gato/gato-sentado.webp', 'y vuelve a su pose');
+  for (let i = 0; i < 4; i++) gato(m).emitir('click');
+  assert.equal(dice.textContent, GUION.gato.harto);
+});
+
+test('si una imagen del gato no carga, el gato desaparece y no rompe nada', () => {
+  const m = montar({ hash: '#/quien-soy/1' });
+  gatoImg(m).emitir('error');
+  assert.notEqual(gato(m).getAttribute('hidden'), null);
+  ir(m, '#/quien-soy/4');
+  assert.notEqual(gato(m).getAttribute('hidden'), null, 'sigue escondido aunque cambie de pose');
+  assert.equal(m.api.estado.actual, 5);
+});
+
+test('cortina: al cambiar de capítulo aparece con su número y se va sola; no en la primera escena ni dentro del capítulo', () => {
+  const m = montar();
+  assert.equal(m.raiz.porClase('st-cortina').length, 0, 'no al arrancar');
+  m.flush(); m.tecla('ArrowRight');
+  assert.equal(m.raiz.porClase('st-cortina').length, 0, 'no dentro del capítulo');
+  m.flush(); m.tecla('ArrowRight');
+  const c = m.raiz.porClase('st-cortina');
+  assert.equal(c.length, 1);
+  assert.equal(c[0].textContent, '02Quién soy');
+  assert.equal(c[0].getAttribute('aria-hidden'), 'true');
+  m.flush();
+  assert.equal(m.raiz.porClase('st-cortina').length, 0, 'se retira');
+  ir(m, '#lectura');
+  m.win.location.hash = '#/vestidor/1';
+  assert.equal(m.raiz.porClase('st-cortina').length, 0, 'volviendo del modo lectura, sin cortina');
+  const r = montar({ reducido: true, hash: '#/entrada/2' });
+  r.tecla('ArrowRight');
+  assert.equal(r.api.estado.actual, 2);
+  assert.equal(r.raiz.porClase('st-cortina').length, 0, 'con movimiento reducido, sin cortina');
+});
+
+test('Qué puedo hacer y Cómo trabajo: cartas en dos tramos, cinco pasos y la regla, todo desde el modo lectura', () => {
+  const m = montar({ hash: '#/que-puedo-hacer/1' });
+  assert.deepEqual(m.raiz.porClase('v-tarjeta').map((t) => t.children[0].textContent), ['P1', 'P2', 'P3', 'P4']);
+  ir(m, '#/que-puedo-hacer/2');
+  assert.deepEqual(m.raiz.porClase('v-tarjeta').map((t) => t.children[0].textContent), ['P5', 'P6']);
+  assert.ok(m.raiz.porClase('v-tarjeta')[0].classList.contains('teal'));
+  ir(m, '#/como-trabajo/1');
+  const pasos = m.raiz.porClase('v-pasos')[0].children;
+  assert.deepEqual(pasos.map((li) => li.children[0].textContent), ['Producto', 'Arquitectura', 'Desarrollo', 'Revisión', 'Documentación']);
+  ir(m, '#/como-trabajo/2');
+  assert.equal(m.raiz.porClase('v-regla')[0].todos((x) => x.tagName === 'BLOCKQUOTE')[0].textContent, 'Producción pertenece a Pablo.');
+});
+
+test('Vestidor: tocar una percha me cambia de ropa, lo digo, marca la elegida y no avanza; al salir vuelvo a mi pose', () => {
+  const m = montar({ hash: '#/vestidor/1' });
+  m.flush();
+  const perchas = m.raiz.porClase('v-percha');
+  assert.equal(perchas.length, 3);
+  assert.equal(perchas[0].getAttribute('type'), 'button');
+  assert.equal(perchas[0].children[0].getAttribute('loading'), 'lazy');
+  perchas[1].emitir('click');
+  assert.equal(m.api.estado.actual, m.api.lista.findIndex((p) => p.cap.id === 'vestidor'), 'no avanza');
+  const pose = m.raiz.porClase('st-pose').filter((x) => !x.classList.contains('sale'));
+  assert.equal(pose.length, 1);
+  assert.equal(pose[0].getAttribute('src'), 'assets/shiruvana/vestuario-neon.webp');
+  assert.equal(pose[0].getAttribute('alt'), 'Vestida neon');
+  assert.equal(m.raiz.porClase('st-sr')[0].textContent, 'NEON: ocasión neon.');
+  assert.deepEqual(perchas.map((p) => p.getAttribute('aria-pressed')), ['false', 'true', 'false']);
+  m.flush(); m.tecla('Enter', perchas[2]);
+  assert.equal(m.api.estado.actual, m.api.lista.findIndex((p) => p.cap.id === 'vestidor'), 'Enter sobre una percha es de la percha');
+  ir(m, '#/vestidor/2');
+  const actual = m.raiz.porClase('st-pose').filter((x) => !x.classList.contains('sale'));
+  assert.equal(actual[0].getAttribute('src'), 'assets/shiruvana/cuerpo-presenta.webp');
+  assert.equal(m.raiz.porClase('v-percha')[0].children[0].getAttribute('width'), '720', 'respeta el tamaño de cada figura');
+  ir(m, '#/vestidor/3');
+  assert.equal(m.raiz.porClase('v-caras')[0].children.length, 2);
+});
+
+test('Ecosistema: puertas que son enlaces reales, mi pose en la puerta con respaldo, y créditos con salida', () => {
+  const m = montar({ hash: '#/ecosistema/1' });
+  const puertas = m.raiz.porClase('v-puerta');
+  assert.deepEqual(puertas.map((p) => [p.tagName, p.getAttribute('href')]), [['A', 'https://a/'], ['A', 'https://b/']]);
+  puertas[0].emitir('click');
+  assert.equal(m.win.location.hash, '#/ecosistema/1', 'entrar por una puerta no avanza la función');
+  const pose = m.raiz.porClase('st-pose')[0];
+  assert.equal(pose.getAttribute('src'), 'assets/shiruvana/cuerpo-puerta.webp');
+  pose.emitir('error');
+  assert.equal(pose.getAttribute('src'), 'assets/shiruvana/cuerpo-espalda.webp', 'si la puerta no está subida, me ves de espaldas');
+  ir(m, '#/ecosistema/2');
+  assert.equal(m.api.estado.actual, m.api.lista.length - 1);
+  const cred = m.raiz.porClase('v-creditos')[0];
+  assert.ok(cred.textContent.includes('Pablo') && cred.textContent.includes('Shiruvana'));
+  assert.deepEqual(cred.porClase('st-btn').map((b) => b.getAttribute('href')), ['https://pablosnchz.github.io/gw2-wallet-ligero/', '#/', '#lectura']);
+  cred.porClase('st-btn')[1].emitir('click');
+  m.win.location.hash = '#/';
+  assert.equal(m.api.estado.actual, 0, 'Ver de nuevo vuelve al principio');
 });
 
 // ---------- página, estilos y reglas del sitio ----------
