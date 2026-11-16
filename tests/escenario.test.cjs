@@ -103,16 +103,13 @@ function montar({ hash = '', reducido = false, search = '' } = {}) {
 // ---------- el guion ----------
 test('guion: los 7 capítulos en escena, en orden, cada escena con texto, fondo, gato y visual conocidos', () => {
   assert.deepEqual(GUION.capitulos.map((c) => c.id), ['entrada', 'quien-soy', 'lo-que-construi', 'que-puedo-hacer', 'como-trabajo', 'vestidor', 'ecosistema']);
-  const tipos = ['portada', 'titulo', 'eleccion', 'tarjetas', 'cifras', 'eras', 'linea', 'acciones', 'pasos', 'regla', 'vestidor', 'caras', 'puertas', 'creditos'];
+  const tipos = ['portada', 'titulo', 'tarjetas', 'cifras', 'eras', 'linea', 'acciones', 'pasos', 'regla', 'vestidor', 'caras', 'puertas', 'creditos'];
   for (const cap of GUION.capitulos) {
     assert.ok(cap.escenas.length >= 2, cap.id);
     for (const esc of cap.escenas) {
-      for (const p of [null, 'jugador', 'curioso', 'pablo']) assert.ok(E.textoDe(esc, p).length > 20, cap.id + ': texto para ' + p);
-      if (typeof esc.texto !== 'string') {
-        assert.ok(esc.texto.base, cap.id + ': texto sin base');
-        for (const k of Object.keys(esc.texto)) assert.ok(['base', 'jugador', 'pablo', 'curioso'].includes(k), 'público desconocido ' + k);
-      }
-      if (esc.para) for (const p of esc.para) assert.ok(['jugador', 'curioso', 'pablo'].includes(p), 'para ' + p);
+      assert.equal(typeof esc.texto, 'string', cap.id + ': una sola función, un solo texto');
+      assert.ok(esc.texto.length > 20, cap.id + ': texto');
+      assert.equal(esc.para, undefined, cap.id + ': sin escenas por público');
       assert.ok(tipos.includes(esc.visual.tipo), cap.id + ': ' + esc.visual.tipo);
       assert.ok(['evolving', 'taller', 'noche'].includes(esc.fondo), cap.id + ': fondo ' + esc.fondo);
       assert.ok([null, 'sentado', 'camina', 'festeja'].includes(esc.gato), cap.id + ': gato ' + esc.gato);
@@ -121,6 +118,8 @@ test('guion: los 7 capítulos en escena, en orden, cada escena con texto, fondo,
     }
   }
   assert.equal(GUION.proximos, undefined, 'ya no queda ningún capítulo fuera de escena');
+  assert.equal(GUION.publicos, undefined, 'no hay versiones según quién mira (MC-3b)');
+  assert.equal(E.aplanar(GUION).length, 21);
   const fin = GUION.capitulos.at(-1).escenas.at(-1);
   assert.equal(fin.visual.tipo, 'creditos');
   assert.deepEqual(fin.visual.acciones.map((a) => a.href).slice(1), ['#/', '#lectura']);
@@ -143,7 +142,7 @@ test('guion del gato: imágenes, alt de cada pose, frases y una sola salida de t
 });
 
 test('guion: hablo en primera persona y nunca de mí en tercera', () => {
-  const textos = GUION.capitulos.flatMap((c) => c.escenas.flatMap((e) => (typeof e.texto === 'string' ? [e.texto] : Object.values(e.texto)))).join(' ');
+  const textos = GUION.capitulos.flatMap((c) => c.escenas.map((e) => e.texto)).join(' ');
   assert.match(textos, /Soy Shiruvana/);
   assert.doesNotMatch(textos, /Shiruvana (hace|construyó|es la|cuenta)/);
 });
@@ -264,7 +263,7 @@ test('arranca en la primera escena, en modo función, con la portada y mi saludo
   assert.equal(m.raiz.porClase('st-sr')[0].textContent, GUION.capitulos[0].escenas[0].texto, 'el lector de pantalla recibe el texto completo');
   m.flush();
   assert.equal(m.texto(), GUION.capitulos[0].escenas[0].texto);
-  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '1 / ' + (m.api.lista.length - 1), 'sin elegir, la escena de Pablo no cuenta');
+  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '1 / 21');
   assert.equal(m.raiz.porClase('st-prev')[0].disabled, true);
 });
 
@@ -466,7 +465,7 @@ test('Ecosistema: puertas que son enlaces reales, mi pose en la puerta con respa
   assert.equal(pose.getAttribute('src'), 'assets/shiruvana/cuerpo-puerta.webp');
   pose.emitir('error');
   assert.equal(pose.getAttribute('src'), 'assets/shiruvana/cuerpo-espalda.webp', 'si la puerta no está subida, me ves de espaldas');
-  ir(m, '#/ecosistema/3');
+  ir(m, '#/ecosistema/2');
   assert.equal(m.api.estado.actual, m.api.lista.length - 1);
   const cred = m.raiz.porClase('v-creditos')[0];
   assert.ok(cred.textContent.includes('Pablo') && cred.textContent.includes('Shiruvana'));
@@ -476,55 +475,37 @@ test('Ecosistema: puertas que son enlaces reales, mi pose en la puerta con respa
   assert.equal(m.api.estado.actual, 0, 'Ver de nuevo vuelve al principio');
 });
 
-// ---------- MC-3: según quién llega, y la función que anda sola ----------
-const ids = (L, p) => L.filter((x) => E.visible(x.esc, p)).map((x) => x.cap.id + '/' + (x.e + 1));
+// ---------- MC-3: la función que anda sola (sin versiones por público desde MC-3b) ----------
 
-test('públicos: jugador 15 escenas sin Cómo trabajo ni la Factory por dentro; curioso 21; Pablo 22 con su escena', () => {
-  const L = E.aplanar(GUION);
-  assert.deepEqual(GUION.publicos.map((p) => p.id), ['jugador', 'curioso', 'pablo']);
-  const jugador = ids(L, 'jugador');
-  assert.equal(jugador.length, 15);
-  assert.ok(!jugador.some((x) => x.startsWith('como-trabajo/')), 'el jugador no necesita mi proceso');
-  assert.ok(!jugador.includes('que-puedo-hacer/2') && !jugador.includes('lo-que-construi/3'));
-  assert.ok(jugador.includes('vestidor/1') && jugador.includes('ecosistema/3'));
-  assert.equal(ids(L, 'curioso').length, 21);
-  assert.deepEqual(ids(L, null), ids(L, 'curioso'), 'sin elegir = curioso');
-  assert.ok(!ids(L, 'curioso').includes('ecosistema/2'), 'la escena de Pablo es solo de Pablo');
-  assert.equal(ids(L, 'pablo').length, L.length, 'Pablo ve todo');
-  for (const p of ['jugador', 'curioso', 'pablo']) {
-    const v = ids(L, p);
-    assert.equal(v[0], 'entrada/1'); assert.equal(v[1], 'entrada/2', 'todos pasan por la elección');
-    assert.equal(v.at(-1), 'ecosistema/3', 'todos terminan en los créditos');
-  }
-});
-
-test('lógica pura de públicos: textoDe, vecina, leerQuery, armarQuery, espera y #/<capítulo> según público', () => {
-  const L = E.aplanar(GUION);
-  const fin = GUION.capitulos.at(-1).escenas.at(-1);
-  assert.equal(E.textoDe(fin, 'jugador'), fin.texto.jugador);
-  assert.equal(E.textoDe(fin, 'curioso'), fin.texto.base);
-  assert.equal(E.textoDe(fin, null), fin.texto.base);
-  const i2 = L.findIndex((x) => x.cap.id === 'lo-que-construi' && x.e === 1);
-  assert.equal(L[E.vecina(L, i2, 1, 'jugador')].cap.id + '/' + (L[E.vecina(L, i2, 1, 'jugador')].e + 1), 'lo-que-construi/5');
-  assert.equal(E.vecina(L, i2, 1, 'curioso'), i2 + 1);
-  assert.equal(E.vecina(L, 0, -1, 'curioso'), -1);
-  assert.equal(E.vecina(L, L.length - 1, 1, 'pablo'), -1);
-  assert.deepEqual(E.leerQuery('?para=jugador&sola=1'), { para: 'jugador', sola: true });
-  assert.deepEqual(E.leerQuery('?para=hacker&sola=si'), { para: null, sola: false }, 'solo valores conocidos');
-  assert.deepEqual(E.leerQuery(''), { para: null, sola: false });
-  assert.equal(E.armarQuery('pablo', true), '?para=pablo&sola=1');
-  assert.equal(E.armarQuery(null, false), '');
+test('lógica pura: leerQuery solo entiende sola=1, armarQuery y espera', () => {
+  assert.deepEqual(E.leerQuery('?sola=1'), { sola: true });
+  assert.deepEqual(E.leerQuery('?para=pablo&sola=1'), { sola: true }, 'un ?para= viejo no rompe nada');
+  assert.deepEqual(E.leerQuery('?sola=si'), { sola: false });
+  assert.deepEqual(E.leerQuery(''), { sola: false });
+  assert.equal(E.armarQuery(true), '?sola=1');
+  assert.equal(E.armarQuery(false), '');
   assert.equal(E.espera('x'.repeat(10)), 2500);
   assert.equal(E.espera('x'.repeat(1000)), 9000, 'nunca más de 9 s');
-  const c = E.leerHash('#/como-trabajo', L, 'jugador');
-  assert.equal(L[c.i].cap.id, 'como-trabajo', 'el enlace directo a un capítulo siempre abre');
-  const e = E.leerHash('#/ecosistema', L, 'jugador');
-  assert.equal(L[e.i].e, 0);
-  assert.equal(E.leerHash('#/lo-que-construi', L, 'jugador').i, L.findIndex((x) => x.cap.id === 'lo-que-construi'));
-  const F = E.aplanar({ capitulos: [{ id: 'x', escenas: [{ para: ['pablo'] }, {}] }] });
-  assert.equal(E.leerHash('#/x', F, 'jugador').i, 1, 'sin número, la primera escena que ve ese público');
-  assert.equal(E.leerHash('#/x', F, 'pablo').i, 0);
-  assert.equal(E.leerHash('#/x/1', F, 'jugador').i, 0, 'con número, la escena pedida');
+  for (const f of ['visible', 'textoDe', 'vecina']) assert.equal(E[f], undefined, 'sin lógica de públicos: ' + f);
+});
+
+test('una sola función: la escena 2 es para todos, sin elección ni pastillas apagadas', () => {
+  const m = montar({ search: '?para=jugador', hash: '#/entrada/2' });
+  m.flush();
+  assert.equal(m.raiz.porClase('v-publico').length, 0);
+  assert.equal(m.raiz.porClase('fuera').length, 0);
+  assert.equal(m.raiz.getAttribute('data-publico'), null);
+  assert.ok(m.raiz.porClase('st-sr')[0].textContent.includes('▶ Sola'), 'le cuento cómo dejarla andar sola');
+  m.tecla('ArrowRight');
+  assert.equal(m.win.location.hash, '#/quien-soy/1');
+  ir(m, '#/lo-que-construi/2');
+  m.tecla('ArrowRight');
+  assert.equal(m.win.location.hash, '#/lo-que-construi/3', 'no se saltea nada');
+  m.tecla('End');
+  assert.equal(m.win.location.hash, '#/ecosistema/2', 'los créditos cierran');
+  m.flush();
+  assert.equal(m.raiz.porClase('st-next')[0].disabled, true);
+  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '21 / 21');
 });
 
 test('andando sola: tocar mientras escribo completa el texto y la espera arranca igual', () => {
@@ -558,57 +539,6 @@ test('andando sola: pasar a modo lectura cancela la espera; avanzar a mano no de
   assert.equal(n.win.location.hash, '#/ecosistema/1', 'una sola espera viva: la de la escena actual, nunca vuelve atrás');
 });
 
-test('¿Quién sos?: tres botones; elegir arma la función, avanza, cambia la cuenta y deja el público en la dirección', () => {
-  const m = montar({ hash: '#/entrada/2' });
-  m.flush();
-  const botones = m.raiz.porClase('v-publico');
-  assert.deepEqual(botones.map((b) => b.getAttribute('data-publico')), ['jugador', 'curioso', 'pablo']);
-  assert.ok(botones.every((b) => b.getAttribute('type') === 'button' && b.getAttribute('aria-pressed') === 'false'));
-  botones[0].emitir('click');
-  assert.equal(m.api.estado.publico, 'jugador');
-  assert.equal(m.win.location.hash, '#/quien-soy/1', 'avanza a la escena siguiente');
-  assert.match(m.win.history.urls.at(-1), /^\?para=jugador#\//, 'el público queda en la dirección para compartir');
-  assert.equal(botones[0].getAttribute('aria-pressed'), 'true');
-  assert.equal(m.raiz.getAttribute('data-publico'), 'jugador');
-  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '3 / 15');
-  const pills = m.raiz.porClase('st-cap');
-  assert.ok(pills[4].classList.contains('fuera'), 'Cómo trabajo, apagado para el jugador');
-  assert.ok(!pills[5].classList.contains('fuera'));
-  ir(m, '#/lo-que-construi/2');
-  m.tecla('ArrowRight');
-  assert.equal(m.win.location.hash, '#/lo-que-construi/5', 'salta lo que no es para el jugador');
-  m.flush(); m.tecla('ArrowLeft');
-  assert.equal(m.win.location.hash, '#/lo-que-construi/2', 'y al volver también');
-  ir(m, '#/que-puedo-hacer/1');
-  assert.ok(m.raiz.porClase('st-sr')[0].textContent.startsWith('Vamos a lo tuyo'), 'le hablo al jugador');
-  m.tecla('End');
-  assert.equal(m.win.location.hash, '#/ecosistema/3');
-  m.flush();
-  assert.equal(m.raiz.porClase('st-next')[0].disabled, true);
-});
-
-test('sin elegir: un clic en el escenario sigue como curioso; la escena de Pablo se saltea', () => {
-  const m = montar({ hash: '#/entrada/2' });
-  m.flush();
-  m.raiz.emitir('click');
-  assert.equal(m.api.estado.publico, null);
-  assert.equal(m.win.location.hash, '#/quien-soy/1');
-  ir(m, '#/ecosistema/1');
-  m.tecla('ArrowRight');
-  assert.equal(m.win.location.hash, '#/ecosistema/3');
-});
-
-test('?para=pablo en el enlace: entra como Pablo, ve su escena y el texto que es para él', () => {
-  const m = montar({ search: '?para=pablo', hash: '#/ecosistema/1' });
-  m.flush(); m.tecla('ArrowRight');
-  assert.equal(m.win.location.hash, '#/ecosistema/2');
-  assert.ok(m.raiz.porClase('v-acciones')[0].textContent.includes('Centro de decisiones'));
-  ir(m, '#/quien-soy/1');
-  assert.ok(m.raiz.porClase('st-sr')[0].textContent.includes('imaginaste'));
-  ir(m, '#/entrada/2');
-  assert.equal(m.raiz.porClase('v-publico')[2].getAttribute('aria-pressed'), 'true', 'la elección muestra quién soy');
-});
-
 test('la función que anda sola: espera a que termine de hablar, avanza, se apaga al final y vive en la dirección', () => {
   const m = montar({ reducido: true, search: '?sola=1', hash: '#/ecosistema/1' });
   const guia = m.raiz.porClase('st-guia')[0];
@@ -617,13 +547,13 @@ test('la función que anda sola: espera a que termine de hablar, avanza, se apag
   assert.ok(m.raiz.classList.contains('guiado'));
   assert.equal(m.pendientes(), 1, 'una espera programada');
   m.paso();
-  assert.equal(m.win.location.hash, '#/ecosistema/3', 'avanzó sola, salteando la escena de Pablo');
+  assert.equal(m.win.location.hash, '#/ecosistema/2', 'avanzó sola hasta los créditos');
   assert.equal(m.api.estado.guiado, false, 'en los créditos se apaga');
   assert.equal(guia.textContent, '▶ Sola');
   m.flush();
-  assert.equal(m.win.location.hash, '#/ecosistema/3', 'apagada, no se mueve más');
+  assert.equal(m.win.location.hash, '#/ecosistema/2', 'apagada, no se mueve más');
   assert.equal(guia.disabled, true, 'en la última escena no hay a dónde ir');
-  assert.equal(m.win.history.urls.at(-1), '/shiruvana/#/ecosistema/3', 'la dirección queda sin «sola»');
+  assert.equal(m.win.history.urls.at(-1), '/shiruvana/#/ecosistema/2', 'la dirección queda sin «sola»');
   ir(m, '#/ecosistema/1');
   assert.equal(guia.disabled, false);
   guia.emitir('click');
@@ -646,19 +576,6 @@ test('andando sola: no corta mientras escribo, el Vestidor la pausa y el modo le
   assert.equal(m.api.estado.actual, -1);
 });
 
-test('elegir desde la escena: el interruptor «Que avance sola» y el botón del pie dicen lo mismo', () => {
-  const m = montar({ reducido: true, hash: '#/entrada/2' });
-  const sola = m.raiz.porClase('v-sola')[0];
-  const guia = m.raiz.porClase('st-guia')[0];
-  assert.equal(sola.getAttribute('aria-pressed'), 'false');
-  sola.emitir('click');
-  assert.equal(sola.getAttribute('aria-pressed'), 'true');
-  assert.equal(guia.getAttribute('aria-pressed'), 'true');
-  assert.equal(m.api.estado.actual, 1, 'tocar el interruptor no avanza al toque');
-  m.paso();
-  assert.equal(m.win.location.hash, '#/quien-soy/1', 'avanza solo después de la espera');
-});
-
 // ---------- página, estilos y reglas del sitio ----------
 test('index.html: escenario vacío al principio del body, scripts al final y arranque seguro', () => {
   assert.match(HTML, /<body>\n<section id="escenario" aria-roledescription="presentación" aria-label="[^"]+" tabindex="-1"><\/section>/);
@@ -674,6 +591,21 @@ test('CSS: solo actúa con html.funcion, respeta movimiento reducido y celular, 
   assert.match(CSS, /@media \(prefers-reduced-motion: reduce\) \{[^@]*animation: none !important/);
   assert.match(CSS, /@media \(max-width: 760px\)/);
   for (const [, u] of CSS.matchAll(/url\("([^"]+)"\)/g)) assert.ok(fs.existsSync(path.join(ROOT, 'css', u)), 'falta ' + u);
+});
+
+test('MC-3b: la barra no cruza la pantalla y mi figura se funde con el fondo', () => {
+  const regla = (sel) => { const i = CSS.indexOf('\n' + sel + ' {'); assert.ok(i >= 0, sel); return CSS.slice(i, CSS.indexOf('}', i)); };
+  assert.doesNotMatch(regla('.st-barra'), /background/, 'sin franja oscura de lado a lado');
+  assert.match(regla('.st-caps'), /border-radius: 999px/, 'los capítulos van en una cápsula');
+  assert.match(regla('.st-caps'), /flex: 0 1 auto/, 'que no ocupa todo el ancho');
+  assert.doesNotMatch(regla('.st-pj'), /z-index/, 'un z-index aísla la mezcla y el negro de la pose queda como un cuadro');
+  const pose = regla('.st-pose');
+  assert.match(pose, /mix-blend-mode: lighten/);
+  assert.match(pose, /height: min\(100%, 880px\)/, 'entra en su lugar, debajo de la barra');
+  assert.match(pose, /\n  mask-image: linear-gradient/, 'el borde de abajo se funde (estándar)');
+  assert.match(pose, /-webkit-mask-image: linear-gradient/, 'y en Safari');
+  assert.doesNotMatch(pose, /filter:/, 'un drop-shadow dibuja el cuadro alrededor de la pose');
+  assert.doesNotMatch(CSS, /\.st-pose \{ height: 78vh/);
 });
 
 test('sin datos privados ni almacenamiento: el motor y el guion no guardan nada ni piden nada afuera', () => {
