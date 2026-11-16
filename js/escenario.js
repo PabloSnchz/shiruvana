@@ -1,4 +1,4 @@
-/* Escenario 1.0.0 — mi presentación por escenas (BL-090 MC-1).
+/* Escenario 1.1.0 — mi presentación por escenas (BL-090 MC-1 y MC-2).
    Motor sin dependencias: lee el guion (js/guion.js) y los datos del modo lectura
    (index.html), y arma la función a pantalla completa.
    Rutas: #/<capitulo>/<n> = función; #lectura o #<sección> = modo lectura.
@@ -6,8 +6,9 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var POSES = 'assets/shiruvana/';
+  var GATO = 'assets/gato/gato-';
   var TIPEO_MS = 22;
   var TIPEO_PASO = 2;
 
@@ -52,6 +53,26 @@
     return items.slice(v.desde || 0, v.hasta == null ? items.length : v.hasta);
   }
 
+  function tramo(lista, v) {
+    return lista.slice(v.desde || 0, v.hasta == null ? lista.length : v.hasta);
+  }
+
+  function poseDe(src) {
+    var m = /([a-z0-9-]+)\.webp$/.exec(src || '');
+    return m ? m[1] : null;
+  }
+
+  function dichoDe(item) {
+    var sub = item.sub ? item.sub.charAt(0).toLowerCase() + item.sub.slice(1) : '';
+    return item.titulo + (sub ? ': ' + sub : '') + '.';
+  }
+
+  function fraseGato(gato, toques) {
+    if (toques === 5 && gato.harto) return gato.harto;
+    var n = toques > 5 ? toques - 2 : toques - 1;
+    return gato.frases[n % gato.frases.length];
+  }
+
   // ---------- datos del modo lectura ----------
 
   function txt(el, sel) {
@@ -59,9 +80,37 @@
     return x ? x.textContent.trim() : '';
   }
 
+  function attr(el, sel, nombre) {
+    var x = el.querySelector(sel);
+    return x ? x.getAttribute(nombre) || '' : '';
+  }
+
+  function figura(fig) {
+    var f = fig.querySelector('figcaption');
+    var todo = f ? f.textContent : '';
+    var sub = f && f.querySelector('span') ? f.querySelector('span').textContent : '';
+    return {
+      src: attr(fig, 'img', 'src'), alt: attr(fig, 'img', 'alt'),
+      ancho: attr(fig, 'img', 'width'), alto: attr(fig, 'img', 'height'),
+      titulo: todo.slice(0, todo.length - sub.length).trim(), sub: sub.trim()
+    };
+  }
+
   function leerDatos(doc) {
     var q = function (s) { return Array.prototype.slice.call(doc.querySelectorAll(s)); };
+    var color = function (el) { return (/\b(amber|violet|teal)\b/.exec(el.className || '') || [, 'amber'])[1]; };
     return {
+      puedo: q('#puedo .card').map(function (c) { return { titulo: txt(c, 'h3'), texto: txt(c, 'p'), color: color(c) }; }),
+      pasos: q('#trabajo .step').map(function (s) { return { titulo: txt(s, 'b'), texto: txt(s, 'span') }; }),
+      regla: q('#trabajo .rule').map(function (r) { return txt(r); })[0] || '',
+      racks: {
+        'trabajo-poses': q('#trabajo-poses .pose').map(figura),
+        vestuarios: q('#vestuarios .pose').map(figura),
+        caras: q('#caras .pose').map(figura)
+      },
+      eco: q('#eco a.card').map(function (a) {
+        return { href: a.getAttribute('href'), titulo: txt(a, 'h3'), texto: txt(a, 'p'), color: color(a) };
+      }),
       cifras: q('#quien .fact').map(function (f) { return { valor: txt(f, 'b'), etiqueta: txt(f, 'span') }; }),
       eras: q('#hice .era').map(function (f) {
         return { era: f.className.replace(/\bera\b/, '').trim(), titulo: txt(f, 'b'), texto: txt(f, 'span') };
@@ -80,7 +129,8 @@
     var html = doc.documentElement;
     var lista = aplanar(guion);
     var reducido = !!(win.matchMedia && win.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    var estado = { modo: null, actual: -1, pose: undefined, fondo: null, escribiendo: false, timer: null, texto: '' };
+    var estado = { modo: null, actual: -1, cap: -1, pose: undefined, fondo: null, gato: undefined, toques: 0, escribiendo: false, timer: null, texto: '' };
+    var gatoCfg = guion.gato || { alt: {}, frases: ['…'] };
     var primeraVez = true;
 
     function h(tag, attrs, hijos) {
@@ -115,9 +165,6 @@
       caps.appendChild(a);
       return a;
     });
-    (guion.proximos || []).forEach(function (p) {
-      caps.appendChild(h('a', { class: 'st-cap pronto', href: p.ancla, title: 'En el modo lectura; pronto en escena', text: p.titulo }));
-    });
     var barra = h('header', { class: 'st-barra' }, [
       h('a', { class: 'st-marca', href: '#/' }, [
         h('img', { src: POSES + 'hola-cara-128.webp', alt: '', width: 28, height: 28 }),
@@ -131,7 +178,14 @@
     var cara = h('img', { class: 'st-cara', src: POSES + 'hola-480.webp', alt: '', width: 48, height: 48 });
     var sr = h('span', { class: 'st-sr' });
     var tipeo = h('span', { class: 'st-tipeo', 'aria-hidden': 'true' });
+    // El gato robot: se sienta sobre el globo; tocarlo no avanza, lo hace hablar.
+    var gatoImg = h('img', { src: GATO + 'sentado.webp', alt: '', width: 320, height: 320 });
+    var gatoBtn = h('button', { class: 'st-gato', type: 'button', 'aria-label': 'Tocar al gato robot', hidden: true }, [gatoImg]);
+    var gatoDice = h('span', { class: 'st-gato-dice', 'aria-live': 'polite' });
+    var gatoRoto = false;
+    gatoImg.addEventListener('error', function () { gatoRoto = true; gatoBtn.setAttribute('hidden', ''); });
     var globo = h('div', { class: 'st-globo' }, [
+      gatoBtn, gatoDice,
       cara,
       h('div', { class: 'st-dice' }, [
         h('p', { class: 'st-nombre', text: 'Shiruvana' }),
@@ -173,7 +227,8 @@
       },
       titulo: vTitulo,
       tarjetas: function (v) {
-        return h('div', { class: 'v v-tarjetas' }, v.items.map(function (t, i) {
+        var items = v.items || tramo(datos[v.fuente] || [], v);
+        return h('div', { class: 'v v-tarjetas' }, items.map(function (t, i) {
           return escalonar(h('div', { class: 'v-tarjeta ' + (t.color || 'amber') }, [h('b', { text: t.titulo }), h('span', { text: t.texto })]), i);
         }));
       },
@@ -199,6 +254,51 @@
               h('time', { text: x.fecha }), h('b', { text: x.titulo }), h('span', { class: 'v-txt', text: x.texto }),
               x.ref ? h('span', { class: 'v-ref', text: x.ref }) : null
             ]), i);
+          }))
+        ]);
+      },
+      pasos: function () {
+        return h('ol', { class: 'v v-pasos' }, datos.pasos.map(function (s, i) {
+          return escalonar(h('li', null, [h('b', { text: s.titulo }), h('span', { text: s.texto })]), i);
+        }));
+      },
+      regla: function (v) {
+        return h('div', { class: 'v v-regla' }, [h('p', { class: 'v-ante', text: v.ante }), h('blockquote', { text: datos.regla })]);
+      },
+      vestidor: function (v) {
+        var items = datos.racks[v.rack] || [];
+        return h('div', { class: 'v v-vestidor' }, [
+          h('div', { class: 'v-perchas', role: 'group', 'aria-label': 'Elegí qué me pongo' }, items.map(function (it, i) {
+            var b = h('button', { class: 'v-percha', type: 'button', 'aria-pressed': 'false', title: it.titulo }, [
+              h('img', { src: it.src, alt: '', width: it.ancho || 640, height: it.alto || 954, loading: 'lazy' }),
+              h('span', { text: it.titulo })
+            ]);
+            b.addEventListener('click', function () { vestir(it, b); });
+            return escalonar(b, i);
+          }))
+        ]);
+      },
+      caras: function () {
+        return h('div', { class: 'v v-caras' }, datos.racks.caras.map(function (it, i) {
+          return escalonar(h('figure', null, [
+            h('img', { src: it.src, alt: it.alt, width: it.ancho || 480, height: it.alto || 640, loading: 'lazy' }),
+            h('figcaption', null, [h('b', { text: it.titulo }), h('span', { text: it.sub })])
+          ]), i);
+        }));
+      },
+      puertas: function () {
+        return h('div', { class: 'v v-puertas' }, datos.eco.map(function (d, i) {
+          return escalonar(h('a', { class: 'v-puerta ' + d.color, href: d.href }, [h('b', { text: d.titulo }), h('span', { text: d.texto })]), i);
+        }));
+      },
+      creditos: function (v) {
+        return h('div', { class: 'v v-creditos' }, [
+          h('p', { class: 'v-ante', text: v.ante }),
+          h('dl', null, v.lineas.map(function (l, i) {
+            return escalonar(h('div', null, [h('dt', { text: l[0] }), h('dd', { text: l[1] })]), i);
+          })),
+          h('div', { class: 'v-btns' }, v.acciones.map(function (a, i) {
+            return escalonar(h('a', { class: 'st-btn' + (a.primario ? ' primario' : ''), href: a.href, text: a.texto }), i + v.lineas.length);
           }))
         ]);
       },
@@ -274,11 +374,72 @@
       raiz.setAttribute('data-fondo', f);
     }
 
-    function ponerPose(pose) {
+    function ponerPose(pose, alt) {
       if (estado.pose === pose) return;
       estado.pose = pose;
       hijosDe(pj).forEach(function (x) { retirar(x, 450); });
-      if (pose) pj.appendChild(h('img', { class: 'st-pose', src: POSES + pose + '.webp', alt: guion.poses[pose] || 'Shiruvana', width: 640, height: 954 }));
+      if (!pose) return;
+      var img = h('img', { class: 'st-pose', src: POSES + pose + '.webp', alt: alt || (guion.poses || {})[pose] || 'Shiruvana', width: 640, height: 954 });
+      var resp = (guion.respaldo || {})[pose];
+      if (resp) {
+        img.addEventListener('error', function uno() {
+          img.removeEventListener && img.removeEventListener('error', uno);
+          img.setAttribute('src', POSES + resp + '.webp');
+        });
+      }
+      pj.appendChild(img);
+    }
+
+    // ---------- el gato ----------
+
+    var gatoTimer = null;
+    function mostrarGato(pose) {
+      gatoImg.setAttribute('src', GATO + pose + '.webp');
+      gatoImg.setAttribute('alt', (gatoCfg.alt || {})[pose] || 'El gato robot');
+      gatoBtn.className = 'st-gato g-' + pose;
+    }
+    function ponerGato(pose) {
+      if (estado.gato === pose) return;
+      estado.gato = pose;
+      if (gatoTimer) { win.clearTimeout(gatoTimer); gatoTimer = null; }
+      gatoDice.textContent = '';
+      globo.classList.remove('gato-habla');
+      if (!pose || gatoRoto) { gatoBtn.setAttribute('hidden', ''); return; }
+      gatoBtn.removeAttribute('hidden');
+      mostrarGato(pose);
+    }
+    function tocarGato() {
+      estado.toques += 1;
+      gatoDice.textContent = fraseGato(gatoCfg, estado.toques);
+      globo.classList.add('gato-habla');
+      mostrarGato('festeja');
+      if (gatoTimer) win.clearTimeout(gatoTimer);
+      gatoTimer = win.setTimeout(function () {
+        gatoTimer = null;
+        globo.classList.remove('gato-habla');
+        gatoDice.textContent = '';
+        if (estado.gato) mostrarGato(estado.gato);
+      }, 1800);
+    }
+    gatoBtn.addEventListener('click', tocarGato);
+
+    // ---------- el Vestidor ----------
+
+    function vestir(it, boton) {
+      hijosDe(boton.parentNode).forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+      boton.setAttribute('aria-pressed', 'true');
+      ponerPose(poseDe(it.src), it.alt);
+      tipear(dichoDe(it));
+    }
+
+    // ---------- cambio de capítulo: una cortina con su número ----------
+
+    function cortina(c) {
+      if (reducido) return;
+      var dos = c + 1 < 10 ? '0' + (c + 1) : String(c + 1);
+      var el = h('div', { class: 'st-cortina', 'aria-hidden': 'true' }, [h('span', { text: dos }), h('b', { text: guion.capitulos[c].titulo })]);
+      raiz.appendChild(el);
+      win.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 1300);
     }
 
     function precargar(i) {
@@ -291,8 +452,11 @@
     function pintar(i) {
       var p = lista[i], esc = p.esc;
       estado.actual = i;
+      if (estado.cap !== -1 && estado.cap !== p.c) cortina(p.c);
+      estado.cap = p.c;
       ponerFondo(esc.fondo || 'taller');
       ponerPose(esc.pose || null);
+      ponerGato(esc.gato);
       pills.forEach(function (a, c) {
         a.classList.toggle('activo', c === p.c);
         if (c === p.c) a.setAttribute('aria-current', 'step'); else a.removeAttribute('aria-current');
@@ -335,6 +499,7 @@
       pararTipeo();
       estado.modo = 'lectura';
       estado.actual = -1;
+      estado.cap = -1;
       html.classList.remove('funcion');
       var destino = ancla && ancla !== 'lectura' ? doc.getElementById(ancla) : null;
       if (destino && destino.scrollIntoView) destino.scrollIntoView();
@@ -409,7 +574,10 @@
     };
   }
 
-  var API = { version: VERSION, aplanar: aplanar, hashDe: hashDe, leerHash: leerHash, cifra: cifra, lineaDe: lineaDe, leerDatos: leerDatos, crear: crear };
+  var API = {
+    version: VERSION, aplanar: aplanar, hashDe: hashDe, leerHash: leerHash, cifra: cifra, lineaDe: lineaDe,
+    tramo: tramo, poseDe: poseDe, dichoDe: dichoDe, fraseGato: fraseGato, leerDatos: leerDatos, crear: crear
+  };
 
   if (typeof module !== 'undefined' && module.exports) { module.exports = API; return; }
 
