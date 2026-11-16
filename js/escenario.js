@@ -1,13 +1,15 @@
-/* Escenario 1.3.0 — mi presentación por escenas (BL-090 MC-1 a MC-3b).
+/* Escenario 1.4.0 — mi presentación por escenas (BL-090 MC-1 a MC-4).
    Motor sin dependencias: lee el guion (js/guion.js) y los datos del modo lectura
    (index.html), y arma la función a pantalla completa.
    Rutas: #/<capitulo>/<n> = función; #lectura o #<sección> = modo lectura.
    Enlace: ?sola=1 deja la función andando sola. Vive en la dirección, no en el
-   navegador: no guardo nada. Una sola función, la misma para todos (MC-3b). */
+   navegador: no guardo nada. Una sola función, la misma para todos (MC-3b).
+   Datos vivos: data/hoy.js (lo escribe una Action cada 2 h desde mi memoria oficial)
+   deja window.SHIRUVANA_HOY; si falta, todo sigue con las cifras del modo lectura. */
 (function (root) {
   'use strict';
 
-  var VERSION = '1.3.0';
+  var VERSION = '1.4.0';
   var POSES = 'assets/shiruvana/';
   var GATO = 'assets/gato/gato-';
   var TIPEO_MS = 22;
@@ -61,6 +63,36 @@
   // Cuánto me quedo en una escena cuando la función anda sola: lo justo para leerla.
   function espera(texto) {
     return Math.min(9000, 2200 + String(texto || '').length * 30);
+  }
+
+  // ---------- datos vivos (Hoy en la Factory) ----------
+
+  function hoyValido(h) {
+    return h && typeof h === 'object' && h.version === 1 && h.backlog && typeof h.decisiones === 'number' ? h : null;
+  }
+
+  // Las cifras del modo lectura marcadas con data-hoy toman el valor vivo.
+  function vivificar(doc, hoy) {
+    if (!hoy || !doc.querySelectorAll) return 0;
+    var n = 0;
+    Array.prototype.slice.call(doc.querySelectorAll('[data-hoy]')).forEach(function (el) {
+      var v = hoy[el.getAttribute('data-hoy')];
+      var b = el.querySelector('b');
+      if (typeof v === 'number' && v > 0 && b) { b.textContent = String(v); n++; }
+    });
+    return n;
+  }
+
+  function hace(iso, ahora) {
+    var t = Date.parse(iso || '');
+    if (isNaN(t)) return '';
+    var min = Math.floor((ahora - t) / 60000); // un reloj adelantado da negativo: «hace un momento»
+    if (min < 2) return 'hace un momento';
+    if (min < 60) return 'hace ' + min + ' min';
+    var hs = Math.floor(min / 60);
+    if (hs < 24) return 'hace ' + hs + (hs === 1 ? ' hora' : ' horas');
+    var d = Math.floor(hs / 24);
+    return 'hace ' + d + (d === 1 ? ' día' : ' días');
   }
 
   function cifra(valor) {
@@ -155,6 +187,8 @@
       escribiendo: false, timer: null, texto: '', guiado: q.sola
     };
     var guiaTimer = null;
+    var hoy = hoyValido(o.hoy);
+    var ahora = o.ahora || function () { return Date.now(); };
     var gatoCfg = guion.gato || { alt: {}, frases: ['…'] };
     var primeraVez = true;
 
@@ -328,6 +362,33 @@
           h('div', { class: 'v-btns' }, v.acciones.map(function (a, i) {
             return escalonar(h('a', { class: 'st-btn' + (a.primario ? ' primario' : ''), href: a.href, text: a.texto }), i + v.lineas.length);
           }))
+        ]);
+      },
+      hoy: function (v) {
+        var ante = h('p', { class: 'v-ante' }, [h('span', { text: v.ante }), hoy ? h('span', { class: 'v-vivo', text: 'en vivo' }) : null]);
+        var panel = h('div', { class: 'v-btns' }, [h('a', { class: 'st-btn primario', href: v.panel, text: 'Ver el Centro de decisiones' })]);
+        if (!hoy) {
+          return h('div', { class: 'v v-hoy' }, [ante, h('p', { class: 'v-titulo', text: 'Mi tablero vive en el Centro de decisiones' }), panel]);
+        }
+        var nums = [
+          [hoy.backlog.curso, 'en curso'], [hoy.backlog.listas, 'listas para arrancar'], [hoy.backlog.hechas, 'terminadas'],
+          [hoy.decisiones, 'decisiones'], [hoy.parches, 'cambios aplicados'], [hoy.semana, 'commits esta semana']
+        ].filter(function (x) { return typeof x[0] === 'number'; });
+        var cuando = hace(hoy.actualizado, ahora());
+        return h('div', { class: 'v v-hoy' }, [
+          ante,
+          h('div', { class: 'v-ahora' }, [
+            h('span', { class: 'v-ahora-ti', text: 'Estoy en' }),
+            h('b', { text: hoy.tarea || 'Entre una tarea y la siguiente' }),
+            h('span', { class: 'v-ahora-pie' }, [
+              hoy.etapa ? h('i', { class: 'v-etapa', text: hoy.etapa }) : null,
+              cuando ? h('span', { text: 'Actualicé mi estado ' + cuando }) : null
+            ])
+          ]),
+          h('div', { class: 'v-cifras v-hoy-n' }, nums.map(function (x, i) {
+            return escalonar(h('div', { class: 'v-cifra' }, [h('b', { class: 'v-num', 'data-n': String(x[0]), 'data-resto': '', text: String(x[0]) }), h('span', { text: x[1] })]), i);
+          })),
+          panel
         ]);
       },
       acciones: function (v) {
@@ -546,7 +607,7 @@
       guia.disabled = next.disabled; // en los créditos no hay a dónde avanzar sola
       tipear(esc.texto);
       raiz.setAttribute('aria-label', 'Shiruvana se presenta: ' + p.cap.titulo + ', escena ' + (p.e + 1) + ' de ' + p.cap.escenas.length);
-      if (esc.visual.tipo === 'cifras') contar(pieza);
+      if (esc.visual.tipo === 'cifras' || esc.visual.tipo === 'hoy') contar(pieza);
       precargar(i + 1);
     }
 
@@ -656,7 +717,7 @@
   var API = {
     version: VERSION, aplanar: aplanar, hashDe: hashDe, leerHash: leerHash, cifra: cifra, lineaDe: lineaDe,
     tramo: tramo, poseDe: poseDe, dichoDe: dichoDe, fraseGato: fraseGato, leerDatos: leerDatos, crear: crear,
-    leerQuery: leerQuery, armarQuery: armarQuery, espera: espera
+    leerQuery: leerQuery, armarQuery: armarQuery, espera: espera, hoyValido: hoyValido, vivificar: vivificar, hace: hace
   };
 
   if (typeof module !== 'undefined' && module.exports) { module.exports = API; return; }
@@ -666,7 +727,9 @@
   var raiz = doc && doc.getElementById('escenario');
   if (!raiz || !root.SHIRUVANA_GUION) { if (doc) doc.documentElement.classList.remove('funcion'); return; }
   try {
-    crear({ doc: doc, win: root, raiz: raiz, guion: root.SHIRUVANA_GUION, datos: leerDatos(doc) });
+    var hoy = hoyValido(root.SHIRUVANA_HOY);
+    vivificar(doc, hoy); // antes de leer los datos: las cifras de la función también salen vivas
+    crear({ doc: doc, win: root, raiz: raiz, guion: root.SHIRUVANA_GUION, datos: leerDatos(doc), hoy: hoy });
     root.ESCENARIO_OK = true;
   } catch (err) {
     doc.documentElement.classList.remove('funcion');
