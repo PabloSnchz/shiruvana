@@ -1,4 +1,4 @@
-/* Escenario 1.1.0 — mi presentación por escenas (BL-090 MC-1 y MC-2).
+/* Escenario 1.2.0 — mi presentación por escenas (BL-090 MC-1 a MC-3).
    Solo actúa con html.funcion; sin esa clase el sitio es el modo lectura de siempre. */
 
 #escenario { display: none; }
@@ -76,6 +76,7 @@ html.funcion #escenario {
 }
 .st-cap:hover { color: var(--text); border-color: var(--border); }
 .st-cap.activo { color: #111; background: var(--amber); font-weight: 700; }
+.st-cap.fuera:not(.activo) { opacity: .4; }
 .st-lectura {
   white-space: nowrap; font-size: .85rem; color: var(--text); text-decoration: none;
   padding: 7px 14px; border-radius: 10px; border: 1px solid var(--border); background: rgba(21,21,29,.7);
@@ -135,6 +136,34 @@ html.funcion #escenario {
 }
 .st-btn.primario { background: #5A3DDB; border-color: #5A3DDB; }
 .st-btn:hover { border-color: var(--amber); }
+
+/* ¿Quién sos? */
+.v-publicos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 18px; max-width: 700px; }
+.v-publico {
+  display: grid; gap: 4px; text-align: left; padding: 14px 16px; border-radius: var(--r); cursor: pointer;
+  font: inherit; color: var(--text); border: 1px solid var(--border); background: rgba(21,21,29,.88);
+  animation: st-sube .5s calc(.2s + var(--i) * .12s) both;
+}
+.v-publico b { font-size: 1rem; }
+.v-publico span { font-size: .84rem; color: var(--muted); }
+.v-publico:hover { border-color: var(--amber); }
+.v-publico[aria-pressed="true"] { border-color: var(--amber); box-shadow: 0 0 0 2px var(--amber), 0 0 18px rgba(232,179,75,.3); }
+.v-sola {
+  display: inline-flex; align-items: center; gap: 10px; margin-top: 14px; padding: 8px 14px; min-height: 44px;
+  border-radius: 999px; cursor: pointer; font: inherit; font-size: .9rem; color: var(--text);
+  border: 1px solid var(--border); background: rgba(21,21,29,.8);
+}
+.v-sola i { position: relative; width: 34px; height: 18px; border-radius: 9px; background: var(--panel-2); border: 1px solid var(--border); transition: background .2s; }
+.v-sola i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--muted); transition: transform .2s, background .2s; }
+.v-sola[aria-pressed="true"] i { background: rgba(232,179,75,.3); }
+.v-sola[aria-pressed="true"] i::after { transform: translateX(16px); background: var(--amber); }
+.v-sola:hover { border-color: var(--amber); }
+.v-eleccion .v-pistas { margin-top: 14px; }
+
+/* Botón de la función que anda sola, en el pie */
+.st-pie .st-guia { min-width: 92px; }
+.st-pie .st-guia[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); }
+#escenario.guiado .st-prog i { box-shadow: 0 0 14px var(--amber), 0 0 4px var(--amber); }
 
 /* Cómo trabajo: los cinco pasos se encienden en orden */
 .v-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: p; }
@@ -309,6 +338,12 @@ html.funcion #escenario {
   .v-creditos dd { font-size: 1.15rem; }
   .st-gato { width: 74px; right: 10px; }
   .st-gato-dice { right: 90px; bottom: calc(100% + 26px); }
+  .v-publicos { grid-template-columns: minmax(0, 1fr); gap: 6px; max-width: 62vw; margin-top: 10px; }
+  .v-publico { padding: 8px 12px; }
+  .v-publico span { display: none; }
+  .v-sola { margin-top: 8px; font-size: .82rem; }
+  .v-eleccion .v-pistas { display: none; }
+  .st-pie .st-guia { min-width: 0; padding: 0 10px; }
 }
 @media (max-height: 560px) {
   .st-pose { height: 78vh; }
