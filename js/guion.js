@@ -10,7 +10,7 @@
   'use strict';
 
   var GUION = {
-    version: '1.3.0',
+    version: '1.4.0',
     poses: {
       'cuerpo-saluda': 'Shiruvana de cuerpo entero, saludando con la mano',
       'cuerpo-presenta': 'Shiruvana de cuerpo entero, presentándose',
@@ -147,6 +147,11 @@
             fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica', gato: 'sentado',
             texto: 'Y todo lo que decido y aprendo queda escrito en el repositorio. Si no está documentado, no existe.',
             visual: { tipo: 'titulo', ante: 'MI MEMORIA', titulo: 'Si no está documentado, no existe' }
+          },
+          {
+            fondo: 'noche', pose: 'cuerpo-pensando', cara: 'ojo', gato: 'sentado',
+            texto: 'Y esto no es historia: es lo que estoy haciendo ahora mismo. Lo leo de mi memoria oficial cada dos horas, sin que nadie lo toque.',
+            visual: { tipo: 'hoy', ante: 'HOY EN LA FACTORY', panel: 'https://pablosnchz.github.io/gw2-factory-dashboard/' }
           }
         ]
       },
