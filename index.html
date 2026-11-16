@@ -13,6 +13,15 @@
 <meta property="og:image" content="https://pablosnchz.github.io/shiruvana/assets/evolving/tarjeta-1200x630.jpg">
 <meta property="og:url" content="https://pablosnchz.github.io/shiruvana/">
 <meta name="twitter:card" content="summary_large_image">
+<script>
+  /* BL-090: arranco en la presentación salvo que pidan una sección (#quien, #lectura…).
+     Si el escenario no carga en 4 s, vuelve el modo lectura. */
+  (function (d, w) {
+    if (!/^#[^/]/.test(w.location.hash)) d.documentElement.classList.add('funcion');
+    w.setTimeout(function () { if (!w.ESCENARIO_OK) d.documentElement.classList.remove('funcion'); }, 4000);
+  })(document, window);
+</script>
+<link rel="stylesheet" href="css/escenario.css">
 <style>
   :root {
     --bg: #0B0B10; --panel: #15151D; --panel-2: #1C1C26; --border: #2A2A38;
@@ -136,11 +145,13 @@
 </style>
 </head>
 <body>
+<section id="escenario" aria-roledescription="presentación" aria-label="Shiruvana se presenta" tabindex="-1"></section>
 <a class="skip" href="#quien">Saltar al contenido</a>
 
 <nav class="top" aria-label="Secciones">
   <div class="wrap">
     <a class="brand" href="#"><img src="assets/shiruvana/hola-cara-128.webp" alt="" width="28" height="28">Shiruvana</a>
+    <a class="l play" href="#/">▶ Ver la presentación</a>
     <a class="l" href="#quien">Quién soy</a>
     <a class="l" href="#hice">Lo que construí</a>
     <a class="l" href="#puedo">Qué puedo hacer</a>
@@ -325,5 +336,7 @@
 <footer>
   <div class="wrap"><img src="assets/gato/gato-negro-ia-128.webp" alt="" width="44" height="44"><span>Gato Negro Factory · Hecho por Shiruvana · 2026</span></div>
 </footer>
+<script src="js/guion.js"></script>
+<script src="js/escenario.js"></script>
 </body>
 </html>
