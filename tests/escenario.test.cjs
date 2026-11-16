@@ -50,7 +50,7 @@ class El {
   porClase(c) { return this.todos((x) => x.classList.contains(c)); }
 }
 
-function montar({ hash = '', reducido = false, search = '' } = {}) {
+function montar({ hash = '', reducido = false, search = '', hoy, ahora } = {}) {
   const doc = { listeners: {}, activeElement: null, scrolledTo: null };
   doc.createElement = (t) => new El(t, doc);
   doc.documentElement = new El('html', doc);
@@ -94,7 +94,7 @@ function montar({ hash = '', reducido = false, search = '' } = {}) {
     },
     eco: [{ href: 'https://a/', titulo: 'La Bóveda', texto: 't', color: 'amber' }, { href: 'https://b/', titulo: 'La Guarida', texto: 't', color: 'teal' }]
   };
-  const api = E.crear({ doc, win, raiz, guion: GUION, datos });
+  const api = E.crear({ doc, win, raiz, guion: GUION, datos, hoy, ahora });
   const tecla = (key, target = raiz) => (doc.listeners.keydown || []).forEach((f) => f({ key, target, preventDefault() {} }));
   const texto = () => raiz.porClase('st-tipeo')[0].textContent;
   return { doc, win, raiz, api, flush, paso, pendientes, tecla, texto, html: doc.documentElement };
@@ -103,7 +103,7 @@ function montar({ hash = '', reducido = false, search = '' } = {}) {
 // ---------- el guion ----------
 test('guion: los 7 capítulos en escena, en orden, cada escena con texto, fondo, gato y visual conocidos', () => {
   assert.deepEqual(GUION.capitulos.map((c) => c.id), ['entrada', 'quien-soy', 'lo-que-construi', 'que-puedo-hacer', 'como-trabajo', 'vestidor', 'ecosistema']);
-  const tipos = ['portada', 'titulo', 'tarjetas', 'cifras', 'eras', 'linea', 'acciones', 'pasos', 'regla', 'vestidor', 'caras', 'puertas', 'creditos'];
+  const tipos = ['portada', 'titulo', 'tarjetas', 'cifras', 'eras', 'linea', 'acciones', 'pasos', 'regla', 'vestidor', 'caras', 'puertas', 'creditos', 'hoy'];
   for (const cap of GUION.capitulos) {
     assert.ok(cap.escenas.length >= 2, cap.id);
     for (const esc of cap.escenas) {
@@ -119,7 +119,7 @@ test('guion: los 7 capítulos en escena, en orden, cada escena con texto, fondo,
   }
   assert.equal(GUION.proximos, undefined, 'ya no queda ningún capítulo fuera de escena');
   assert.equal(GUION.publicos, undefined, 'no hay versiones según quién mira (MC-3b)');
-  assert.equal(E.aplanar(GUION).length, 21);
+  assert.equal(E.aplanar(GUION).length, 22);
   const fin = GUION.capitulos.at(-1).escenas.at(-1);
   assert.equal(fin.visual.tipo, 'creditos');
   assert.deepEqual(fin.visual.acciones.map((a) => a.href).slice(1), ['#/', '#lectura']);
@@ -178,7 +178,7 @@ test('lo que leo de los otros capítulos está en el modo lectura: 6 cartas, 5 p
 });
 
 test('los datos que leo del modo lectura están: 5 cifras, 3 eras, 12 hitos (4 chat, 1 agentes, 7 Factory)', () => {
-  assert.equal((HTML.match(/<div class="fact">/g) || []).length, 5);
+  assert.equal((HTML.match(/<div class="fact"( data-hoy="\w+")?>/g) || []).length, 5);
   assert.equal((HTML.match(/<div class="era [abc]">/g) || []).length, 3);
   const tl = HTML.slice(HTML.indexOf('<ol class="tl">'), HTML.indexOf('</ol>'));
   assert.equal((tl.match(/<li class="t-a">/g) || []).length, 4);
@@ -263,7 +263,7 @@ test('arranca en la primera escena, en modo función, con la portada y mi saludo
   assert.equal(m.raiz.porClase('st-sr')[0].textContent, GUION.capitulos[0].escenas[0].texto, 'el lector de pantalla recibe el texto completo');
   m.flush();
   assert.equal(m.texto(), GUION.capitulos[0].escenas[0].texto);
-  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '1 / 21');
+  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '1 / 22');
   assert.equal(m.raiz.porClase('st-prev')[0].disabled, true);
 });
 
@@ -505,7 +505,7 @@ test('una sola función: la escena 2 es para todos, sin elección ni pastillas a
   assert.equal(m.win.location.hash, '#/ecosistema/2', 'los créditos cierran');
   m.flush();
   assert.equal(m.raiz.porClase('st-next')[0].disabled, true);
-  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '21 / 21');
+  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '22 / 22');
 });
 
 test('andando sola: tocar mientras escribo completa el texto y la espera arranca igual', () => {
@@ -576,10 +576,85 @@ test('andando sola: no corta mientras escribo, el Vestidor la pausa y el modo le
   assert.equal(m.api.estado.actual, -1);
 });
 
+// ---------- MC-4: datos vivos y «Hoy en la Factory» ----------
+const HOY = {
+  version: 1, generado: '2026-11-16T22:49:20Z', actualizado: '2026-11-16T20:00:00Z', estado: 'EN CURSO',
+  tarea: 'BL-090 — mi sitio como presentación', etapa: 'DEVELOPMENT',
+  backlog: { curso: 1, listas: 2, bloqueadas: 5, hechas: 81 }, decisiones: 50, lecciones: 45, funcionalidades: 27, parches: 378, semana: 130
+};
+const T0 = Date.parse('2026-11-16T23:00:00Z');
+
+test('lógica pura: hoyValido rechaza lo que no reconoce; hace() cuenta en minutos, horas y días', () => {
+  assert.equal(E.hoyValido(HOY), HOY);
+  for (const malo of [undefined, null, 'x', { version: 2, backlog: {}, decisiones: 1 }, { version: 1, decisiones: 1 }, { version: 1, backlog: {}, decisiones: '50' }]) {
+    assert.equal(E.hoyValido(malo), null, JSON.stringify(malo));
+  }
+  assert.equal(E.hace('2026-11-16T22:59:30Z', T0), 'hace un momento');
+  assert.equal(E.hace('2026-11-16T23:05:00Z', T0), 'hace un momento', 'un reloj adelantado no da negativos');
+  assert.equal(E.hace('2026-11-16T22:15:00Z', T0), 'hace 45 min');
+  assert.equal(E.hace('2026-11-16T22:00:00Z', T0), 'hace 1 hora');
+  assert.equal(E.hace('2026-11-16T18:00:00Z', T0), 'hace 5 horas');
+  assert.equal(E.hace('2026-11-15T23:00:00Z', T0), 'hace 1 día');
+  assert.equal(E.hace('2026-11-13T23:00:00Z', T0), 'hace 3 días');
+  assert.equal(E.hace('', T0), '');
+});
+
+test('vivificar: las cifras marcadas con data-hoy toman el valor vivo; las demás y los valores raros no se tocan', () => {
+  const fact = (k, v) => { const b = { textContent: v }; return { getAttribute: () => k, querySelector: () => b, b }; };
+  const els = [fact('decisiones', '49'), fact('lecciones', '44'), fact('semana', '0'), fact('nada', '9')];
+  const doc = { querySelectorAll: (s) => (s === '[data-hoy]' ? els : []) };
+  assert.equal(E.vivificar(doc, Object.assign({}, HOY, { semana: 0 })), 2);
+  assert.deepEqual(els.map((e) => e.b.textContent), ['50', '45', '0', '9']);
+  assert.equal(E.vivificar(doc, null), 0, 'sin datos vivos, quedan las del modo lectura');
+});
+
+test('Hoy en la Factory: la escena muestra la tarea, la etapa, hace cuánto y seis cifras vivas, con enlace al Centro de decisiones', () => {
+  const m = montar({ hash: '#/como-trabajo/4', hoy: HOY, ahora: () => T0, reducido: true }); // sin la animación del contador
+  m.flush();
+  const v = m.raiz.porClase('v-hoy')[0];
+  assert.ok(v, 'está la escena');
+  assert.equal(v.porClase('v-vivo')[0].textContent, 'en vivo');
+  assert.equal(v.porClase('v-ahora')[0].todos((x) => x.tagName === 'B')[0].textContent, 'BL-090 — mi sitio como presentación');
+  assert.equal(v.porClase('v-etapa')[0].textContent, 'DEVELOPMENT');
+  assert.ok(v.porClase('v-ahora-pie')[0].textContent.includes('Actualicé mi estado hace 3 horas'));
+  const nums = v.porClase('v-cifra').map((c) => c.children[0].textContent + ' ' + c.children[1].textContent);
+  assert.deepEqual(nums, ['1 en curso', '2 listas para arrancar', '81 terminadas', '50 decisiones', '378 cambios aplicados', '130 commits esta semana']);
+  assert.equal(v.porClase('st-btn')[0].getAttribute('href'), 'https://pablosnchz.github.io/gw2-factory-dashboard/');
+  assert.equal(m.raiz.porClase('st-pose')[0].getAttribute('src'), 'assets/shiruvana/cuerpo-pensando.webp');
+});
+
+test('Hoy en la Factory sin datos vivos: no inventa nada, manda al Centro de decisiones; sin commits de la semana, esa cifra no aparece', () => {
+  const m = montar({ hash: '#/como-trabajo/4' });
+  m.flush();
+  const v = m.raiz.porClase('v-hoy')[0];
+  assert.equal(v.porClase('v-vivo').length, 0);
+  assert.equal(v.porClase('v-cifra').length, 0);
+  assert.equal(v.porClase('v-titulo')[0].textContent, 'Mi tablero vive en el Centro de decisiones');
+  assert.equal(v.porClase('st-btn').length, 1);
+  const raro = montar({ hash: '#/como-trabajo/4', hoy: Object.assign({}, HOY, { version: 2 }) });
+  assert.equal(raro.raiz.porClase('v-vivo').length, 0, 'un formato que no reconozco se ignora');
+  const n = montar({ hash: '#/como-trabajo/4', hoy: Object.assign({}, HOY, { semana: null, tarea: '' }), ahora: () => T0 });
+  n.flush();
+  assert.equal(n.raiz.porClase('v-cifra').length, 5);
+  assert.equal(n.raiz.porClase('v-ahora')[0].todos((x) => x.tagName === 'B')[0].textContent, 'Entre una tarea y la siguiente');
+});
+
+test('data/hoy.js: lo genera la Action, es válido y trae las tres cifras que el modo lectura marca como vivas', () => {
+  const vm = require('node:vm');
+  const ctx = { window: {} };
+  vm.runInNewContext(leer('data/hoy.js'), ctx);
+  const hoy = ctx.window.SHIRUVANA_HOY;
+  assert.ok(E.hoyValido(hoy), 'formato reconocido');
+  const claves = [...HTML.matchAll(/data-hoy="(\w+)"/g)].map((x) => x[1]);
+  assert.deepEqual(claves, ['decisiones', 'lecciones', 'funcionalidades']);
+  for (const k of claves) assert.equal(typeof hoy[k], 'number', k);
+  assert.match(leer('data/hoy.js'), /^\/\* Generado por scripts\/hoy\.cjs/);
+});
+
 // ---------- página, estilos y reglas del sitio ----------
 test('index.html: escenario vacío al principio del body, scripts al final y arranque seguro', () => {
   assert.match(HTML, /<body>\n<section id="escenario" aria-roledescription="presentación" aria-label="[^"]+" tabindex="-1"><\/section>/);
-  assert.match(HTML, /<script src="js\/guion\.js"><\/script>\n<script src="js\/escenario\.js"><\/script>\n<\/body>/);
+  assert.match(HTML, /<script src="data\/hoy\.js"><\/script>\n<script src="js\/guion\.js"><\/script>\n<script src="js\/escenario\.js"><\/script>\n<\/body>/);
   assert.match(HTML, /<link rel="stylesheet" href="css\/escenario\.css">/);
   assert.match(HTML, /ESCENARIO_OK\) d\.documentElement\.classList\.remove\('funcion'\)/, 'si el escenario no carga, vuelve la lectura');
   assert.match(HTML, /<a class="l play" href="#\/">/, 'desde la lectura se vuelve a la presentación');
