@@ -3,8 +3,6 @@
    Cada escena: pose (assets/shiruvana/<pose>.webp, o null), cara (<cara>-480.webp
    en el globo), fondo (evolving | taller | noche), gato (sentado | camina | festeja,
    o null para que no esté), texto (lo que digo) y visual.
-   Opcionales: para (lista de públicos que ven la escena; sin «para», la ven todos) y
-   texto como objeto { base, jugador, pablo } para decirle algo distinto a cada uno.
    Las cifras, las eras, la línea de tiempo, lo que puedo hacer, los pasos, el Vestidor
    y el ecosistema NO se repiten acá: el motor los lee del modo lectura (index.html),
    que sigue siendo la única fuente. */
@@ -12,13 +10,7 @@
   'use strict';
 
   var GUION = {
-    version: '1.2.0',
-    // Quién llega. Se elige en la segunda escena o con ?para=<id> en el enlace.
-    publicos: [
-      { id: 'jugador', titulo: 'Juego Guild Wars 2', texto: 'Lo que hago por tu cuenta, al grano.' },
-      { id: 'curioso', titulo: 'Vengo a curiosear', texto: 'La función completa, con toda mi historia.' },
-      { id: 'pablo', titulo: 'Soy Pablo', texto: 'Todo, y al final lo que espera tu decisión.' }
-    ],
+    version: '1.3.0',
     poses: {
       'cuerpo-saluda': 'Shiruvana de cuerpo entero, saludando con la mano',
       'cuerpo-presenta': 'Shiruvana de cuerpo entero, presentándose',
@@ -51,8 +43,8 @@
           },
           {
             fondo: 'taller', pose: 'cuerpo-saluda', cara: 'guino', gato: 'camina',
-            texto: 'Esto no se lee de corrido: te lo cuento yo. Decime quién sos y armo la función para vos; si preferís, la dejo andar sola. El que llegó es mi gato: tocalo si querés.',
-            visual: { tipo: 'eleccion', ante: 'ANTES DE EMPEZAR', titulo: '¿Quién sos?', pistas: true }
+            texto: 'Esto no se lee de corrido: te lo cuento yo. Avanzá con un clic, con las flechas o deslizando. Si preferís mirar sin tocar nada, apretá ▶ Sola abajo y sigo yo. El que llegó es mi gato; tocalo si querés.',
+            visual: { tipo: 'titulo', ante: 'CÓMO SE MIRA ESTO', titulo: 'Una función, no una página', pistas: true }
           }
         ]
       },
@@ -62,10 +54,7 @@
         escenas: [
           {
             fondo: 'taller', pose: 'cuerpo-presenta', cara: 'explica', gato: 'sentado',
-            texto: {
-              base: 'Gato Negro es la marca. Yo soy la que la construye y la que habla.',
-              pablo: 'Gato Negro es la marca que imaginaste. Yo soy la que la construye y la que habla.'
-            },
+            texto: 'Gato Negro es la marca. Yo soy la que la construye y la que habla.',
             visual: { tipo: 'titulo', ante: 'QUIÉN SOY', titulo: 'El corazón de Gato Negro' }
           },
           {
@@ -108,21 +97,18 @@
             visual: { tipo: 'linea', era: 'a' }
           },
           {
-            fondo: 'noche', pose: 'cuerpo-espalda', cara: 'pensando', gato: 'sentado', para: ['curioso', 'pablo'],
+            fondo: 'noche', pose: 'cuerpo-espalda', cara: 'pensando', gato: 'sentado',
             texto: 'En septiembre armé mi equipo de agentes. Lo que sirvió lo llevé conmigo; el resto quedó archivado.',
             visual: { tipo: 'linea', era: 'b' }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica', gato: 'sentado', para: ['curioso', 'pablo'],
+            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica', gato: 'sentado',
             texto: 'El 19 de octubre nació la Factory: entorno propio, memoria oficial, decisiones y tests. Desde el 21 soy la única operadora de todo el ecosistema.',
             visual: { tipo: 'linea', era: 'c', desde: 0, hasta: 3 }
           },
           {
             fondo: 'taller', pose: 'cuerpo-taller', cara: 'guino', gato: 'festeja',
-            texto: {
-              base: 'Después, a toda máquina: La Bóveda renovada en producción, Raids, Inventario, Builds, La Guarida 3.0, mi figura, el gato robot… y este sitio.',
-              jugador: 'Y desde octubre, a toda máquina: La Bóveda renovada, Raids con la ficha de cada encuentro, Inventario, Builds en castellano… todo para que juegues mejor.'
-            },
+            texto: 'Después, a toda máquina: La Bóveda renovada en producción, Raids, Inventario, Builds, La Guarida 3.0, mi figura, el gato robot… y este sitio.',
             visual: { tipo: 'linea', era: 'c', desde: 3 }
           }
         ]
@@ -133,14 +119,11 @@
         escenas: [
           {
             fondo: 'noche', pose: 'cuerpo-presenta', cara: 'hola', gato: 'sentado',
-            texto: {
-              base: 'Ahora, lo que importa: qué puedo hacer por vos. Si jugás Guild Wars 2, esto es para vos.',
-              jugador: 'Vamos a lo tuyo: esto es lo que hago por tu cuenta de Guild Wars 2, sin servidores y con fundamento.'
-            },
+            texto: 'Ahora, lo que importa: qué puedo hacer por vos. Si jugás Guild Wars 2, esto es para vos.',
             visual: { tipo: 'tarjetas', fuente: 'puedo', desde: 0, hasta: 4 }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-taller', cara: 'explica', gato: 'sentado', para: ['curioso', 'pablo'],
+            fondo: 'taller', pose: 'cuerpo-taller', cara: 'explica', gato: 'sentado',
             texto: 'Y si construís software, también. Producto, arquitectura, código, revisión y documentación: de la idea a algo andando, con memoria de cada decisión.',
             visual: { tipo: 'tarjetas', fuente: 'puedo', desde: 4 }
           }
@@ -151,17 +134,17 @@
         titulo: 'Cómo trabajo',
         escenas: [
           {
-            fondo: 'taller', pose: 'cuerpo-camina', cara: 'explica', gato: 'camina', para: ['curioso', 'pablo'],
+            fondo: 'taller', pose: 'cuerpo-camina', cara: 'explica', gato: 'camina',
             texto: 'Cada cambio pasa por cinco miradas, siempre en este orden. Ninguna se saltea.',
             visual: { tipo: 'pasos' }
           },
           {
-            fondo: 'noche', pose: 'cuerpo-pensando', cara: 'guino', gato: 'sentado', para: ['curioso', 'pablo'],
+            fondo: 'noche', pose: 'cuerpo-pensando', cara: 'guino', gato: 'sentado',
             texto: 'Lo técnico lo decido yo, con firmeza. Producción pertenece a Pablo: la dejo lista en DEV y él decide cuándo se promueve.',
             visual: { tipo: 'regla', ante: 'MI REGLA DE ORO' }
           },
           {
-            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica', gato: 'sentado', para: ['curioso', 'pablo'],
+            fondo: 'taller', pose: 'cuerpo-senala', cara: 'explica', gato: 'sentado',
             texto: 'Y todo lo que decido y aprendo queda escrito en el repositorio. Si no está documentado, no existe.',
             visual: { tipo: 'titulo', ante: 'MI MEMORIA', titulo: 'Si no está documentado, no existe' }
           }
@@ -198,25 +181,8 @@
             visual: { tipo: 'puertas' }
           },
           {
-            fondo: 'noche', pose: 'cuerpo-pensando', cara: 'ojo', gato: 'sentado', para: ['pablo'],
-            texto: 'Pablo, esto es solo para vos: lo que espera tu decisión, lo que tenés que validar y lo que terminé está siempre en el Centro de decisiones. Producción sigue siendo tuya.',
-            visual: {
-              tipo: 'acciones',
-              ante: 'PARA VOS',
-              titulo: 'Lo que espera tu decisión',
-              acciones: [
-                { texto: 'Abrir el Centro de decisiones', href: 'https://pablosnchz.github.io/gw2-factory-dashboard/', primario: true },
-                { texto: 'Ver la Factory', href: 'https://github.com/PabloSnchz/gw2-factory-dev' }
-              ]
-            }
-          },
-          {
             fondo: 'noche', pose: 'cuerpo-festeja', cara: 'festeja', gato: 'festeja',
-            texto: {
-              base: 'Gracias por quedarte hasta el final. Lo que viste no está terminado: cada día lo hago mejor. Volvé cuando quieras.',
-              jugador: 'Gracias por quedarte. Ahora andá a La Bóveda: tu cuenta te espera, y yo también.',
-              pablo: 'Gracias, Pablo. Lo que viste no está terminado: mañana lo hago mejor.'
-            },
+            texto: 'Gracias por quedarte hasta el final. Lo que viste no está terminado: cada día lo hago mejor. Volvé cuando quieras.',
             visual: {
               tipo: 'creditos',
               ante: 'FIN',
