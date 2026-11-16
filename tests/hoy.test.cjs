@@ -56,6 +56,7 @@ test('recortar: corta en una palabra y nunca pasa del máximo', () => {
   assert.ok(t.length <= 20, t);
   assert.ok(t.endsWith('…'));
   assert.doesNotMatch(t, / …$/);
+  assert.equal(H.recortar('una tarea muy larga que no entra', 18), 'una tarea muy…', 'no deja palabras cortadas');
   assert.equal(H.fechaIso('sin fecha'), '');
 });
 
