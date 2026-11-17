@@ -1,0 +1,107 @@
+# CI del sitio y del kit compartido (BL-091 CD-3b).
+# Corre la suite en cada push a main y una vez por día: baja una copia de la-guarida para verificar
+# que el kit y la escena de La Guarida sigan iguales en lo que comparten y que existan las imágenes
+# que el kit pide. Deja el resultado en ci/ULTIMO.md (la Factory no puede leer los logs de Actions).
+#
+# Seguridad: solo en este repo; nada del evento entra a un comando; el único archivo que commitea
+# es ci/ULTIMO.md (verificado antes del commit). Sin fecha en el informe: solo hay commit si cambia
+# el resultado o alguno de los dos commits verificados.
+
+name: kit-ci
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'ci/**'
+      - 'data/**'
+  schedule:
+    - cron: '41 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kit-ci
+  cancel-in-progress: false
+
+jobs:
+  suite:
+    if: github.repository == 'PabloSnchz/shiruvana'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/checkout@v4
+        with:
+          repository: PabloSnchz/la-guarida
+          path: .la-guarida
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Correr la suite
+        id: suite
+        env:
+          LA_GUARIDA: .la-guarida
+        run: |
+          set +e
+          node --test --test-reporter=spec tests/*.test.cjs > "$RUNNER_TEMP/out.txt" 2>&1
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Escribir ci/ULTIMO.md
+        run: |
+          mkdir -p ci
+          LG_SHA=$(git -C .la-guarida rev-parse HEAD)
+          if [ "${{ steps.suite.outputs.code }}" != "0" ]; then
+            {
+              echo "# CI: FALLA"
+              echo
+              echo "- Commit verificado: $(git rev-parse HEAD)"
+              echo "- La Guarida verificada: $LG_SHA"
+              echo
+              echo "## Fallas"
+              echo
+              echo '```'
+              grep -n -E "✖|not ok|AssertionError|Error:|expected|actual" "$RUNNER_TEMP/out.txt" | head -n 200
+              echo '```'
+              echo
+              echo "## Salida (últimos 60 KB)"
+              echo
+              echo '```'
+              tail -c 60000 "$RUNNER_TEMP/out.txt" | grep -v -E "duration_ms"
+              echo '```'
+            } > ci/ULTIMO.md
+          else
+            {
+              echo "# CI: VERDE"
+              echo
+              echo "- Commit verificado: $(git rev-parse HEAD)"
+              echo "- La Guarida verificada: $LG_SHA"
+              echo
+              grep -E "^ℹ (tests|pass|fail|skipped)" "$RUNNER_TEMP/out.txt"
+            } > ci/ULTIMO.md
+          fi
+
+      - name: Commit del informe
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- ci/ULTIMO.md
+          if git diff --cached --name-only | grep -vx 'ci/ULTIMO.md'; then echo "Cambios no esperados"; exit 1; fi
+          if ! git diff --cached --quiet; then
+            git commit -m "kit-ci: ci/ULTIMO.md"
+            git push origin HEAD:main || { git pull --rebase origin main && git push origin HEAD:main; }
+          fi
+
+      - name: Resultado
+        if: steps.suite.outputs.code != '0'
+        run: |
+          echo "La suite falló: ver ci/ULTIMO.md"
+          exit 1
