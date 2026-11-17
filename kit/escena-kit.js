@@ -2,8 +2,11 @@
  * kit/escena-kit.js — «Escena» compartida de Shiruvana (1.0.0, 2026-11-17, BL-091 CD-3)
  *
  * Mi globo con el gato robot sentado encima y mis poses de cuerpo entero sin fondo,
- * para todo el ecosistema. La usa el Centro de mando (gw2-factory-dashboard); La Guarida
- * pasa a usarla después (CD-3b), así hay una sola versión.
+ * para todo el ecosistema. La usa el Centro de mando (gw2-factory-dashboard).
+ * La Guarida conserva su escena (js/escena.js: consejo, bienvenida, buscador, reacciones);
+ * lo que comparten (recorte, vecinos, el gato y sus frases) tiene que ser idéntico: lo vigila
+ * tests/sync.test.cjs en el CI (kit-ci.yml), que también verifica que existan las imágenes.
+ * Un cambio al recorte se hace en los dos lugares, en el mismo micro-ciclo (BL-091 CD-3b).
  *
  * Versión fija: cada sitio la pide con ?v=<versión>. Un cambio que rompa sube el número mayor.
  * Las imágenes viven en la-guarida/assets/brand (mismo origen pablosnchz.github.io: el canvas
