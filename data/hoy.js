@@ -1,11 +1,11 @@
 /* Generado por scripts/hoy.cjs desde gw2-factory-dev/ai-memory. No editar a mano. */
 window.SHIRUVANA_HOY = {
  "version": 1,
- "generado": "2026-11-17T17:40:55Z",
- "actualizado": "2026-11-17T11:15:00Z",
+ "generado": "2026-11-18T01:01:55Z",
+ "actualizado": "2026-11-18T00:55:00Z",
  "estado": "ESPERANDO A PABLO",
- "tarea": "Ninguna en curso. BL-091 cerrada por Pablo (2026-11-17 10:59Z); espero que elijas lo próximo.",
- "etapa": "DOCUMENTATION COMPLETADA",
+ "tarea": "BL-092 — la estética de mi universo en La Bóveda DEV. BV-6a HECHO (los paneles del theme Gato Negro pasan a la obsidiana de mi universo, sin el gris azulado);…",
+ "etapa": "PRODUCT",
  "backlog": {
   "curso": 1,
   "listas": 2,
@@ -15,6 +15,6 @@ window.SHIRUVANA_HOY = {
  "decisiones": 50,
  "lecciones": 45,
  "funcionalidades": 28,
- "parches": 412,
- "semana": 199
+ "parches": 428,
+ "semana": 266
 };
