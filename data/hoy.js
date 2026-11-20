@@ -1,8 +1,8 @@
 /* Generado por scripts/hoy.cjs desde gw2-factory-dev/ai-memory. No editar a mano. */
 window.SHIRUVANA_HOY = {
  "version": 1,
- "generado": "2026-11-19T10:29:06Z",
- "actualizado": "2026-11-19T06:20:00Z",
+ "generado": "2026-11-20T13:08:58Z",
+ "actualizado": "2026-11-20T13:05:00Z",
  "estado": "ESPERANDO A PABLO",
  "tarea": "ninguna en curso. BL-094 CERRADA (2026-11-19): las guías de usuario en mi universo, validadas por Pablo en DEV (FEAT-029).",
  "etapa": "PRODUCT",
@@ -12,9 +12,9 @@ window.SHIRUVANA_HOY = {
   "bloqueadas": 5,
   "hechas": 89
  },
- "decisiones": 51,
+ "decisiones": 52,
  "lecciones": 45,
  "funcionalidades": 30,
- "parches": 458,
- "semana": 401
+ "parches": 459,
+ "semana": 404
 };
