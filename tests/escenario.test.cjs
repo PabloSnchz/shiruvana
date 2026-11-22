@@ -13,6 +13,8 @@ const MOTOR_SRC = leer('js/escenario.js');
 const GUION_SRC = leer('js/guion.js');
 const GUION = require('../js/guion.js');
 const E = require('../js/escenario.js');
+// SH-3: Shiruna y Pablo (webp sin fondo, las mismas del Centro de mando), en assets/shiruvana/.
+const FAMILIA = /^(shiruna|pablo)-[a-z]+$/;
 
 // ---------- un DOM mínimo, suficiente para el motor ----------
 class El {
@@ -101,8 +103,8 @@ function montar({ hash = '', reducido = false, search = '', hoy, ahora } = {}) {
 }
 
 // ---------- el guion ----------
-test('guion: los 7 capítulos en escena, en orden, cada escena con texto, fondo, gato y visual conocidos', () => {
-  assert.deepEqual(GUION.capitulos.map((c) => c.id), ['entrada', 'quien-soy', 'lo-que-construi', 'que-puedo-hacer', 'como-trabajo', 'vestidor', 'ecosistema']);
+test('guion: los 8 capítulos en escena, en orden, cada escena con texto, fondo, gato y visual conocidos', () => {
+  assert.deepEqual(GUION.capitulos.map((c) => c.id), ['entrada', 'quien-soy', 'lo-que-construi', 'que-puedo-hacer', 'como-trabajo', 'vestidor', 'shiruna', 'ecosistema']);
   const tipos = ['portada', 'titulo', 'tarjetas', 'cifras', 'eras', 'linea', 'acciones', 'pasos', 'regla', 'vestidor', 'caras', 'puertas', 'creditos', 'hoy'];
   for (const cap of GUION.capitulos) {
     assert.ok(cap.escenas.length >= 2, cap.id);
@@ -119,7 +121,7 @@ test('guion: los 7 capítulos en escena, en orden, cada escena con texto, fondo,
   }
   assert.equal(GUION.proximos, undefined, 'ya no queda ningún capítulo fuera de escena');
   assert.equal(GUION.publicos, undefined, 'no hay versiones según quién mira (MC-3b)');
-  assert.equal(E.aplanar(GUION).length, 22);
+  assert.equal(E.aplanar(GUION).length, 26);
   const fin = GUION.capitulos.at(-1).escenas.at(-1);
   assert.equal(fin.visual.tipo, 'creditos');
   assert.deepEqual(fin.visual.acciones.map((a) => a.href).slice(1), ['#/', '#lectura']);
@@ -263,7 +265,7 @@ test('arranca en la primera escena, en modo función, con la portada y mi saludo
   assert.equal(m.raiz.porClase('st-sr')[0].textContent, GUION.capitulos[0].escenas[0].texto, 'el lector de pantalla recibe el texto completo');
   m.flush();
   assert.equal(m.texto(), GUION.capitulos[0].escenas[0].texto);
-  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '1 / 22');
+  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '1 / 26');
   assert.equal(m.raiz.porClase('st-prev')[0].disabled, true);
 });
 
@@ -505,7 +507,7 @@ test('una sola función: la escena 2 es para todos, sin elección ni pastillas a
   assert.equal(m.win.location.hash, '#/ecosistema/2', 'los créditos cierran');
   m.flush();
   assert.equal(m.raiz.porClase('st-next')[0].disabled, true);
-  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '22 / 22');
+  assert.equal(m.raiz.porClase('st-cuenta')[0].textContent, '26 / 26');
 });
 
 test('andando sola: tocar mientras escribo completa el texto y la espera arranca igual', () => {
@@ -536,7 +538,7 @@ test('andando sola: pasar a modo lectura cancela la espera; avanzar a mano no de
   n.tecla('ArrowRight');
   assert.equal(n.win.location.hash, '#/vestidor/3');
   for (let k = 0; k < 20 && n.pendientes() && n.win.location.hash === '#/vestidor/3'; k++) n.paso();
-  assert.equal(n.win.location.hash, '#/ecosistema/1', 'una sola espera viva: la de la escena actual, nunca vuelve atrás');
+  assert.equal(n.win.location.hash, '#/shiruna/1', 'una sola espera viva: la de la escena actual, nunca vuelve atrás');
 });
 
 test('la función que anda sola: espera a que termine de hablar, avanza, se apaga al final y vive en la dirección', () => {
@@ -693,4 +695,54 @@ test('sin datos privados ni almacenamiento: el motor y el guion no guardan nada 
 
 test('tamaño: cada archivo nuevo bajo 40 KB (DEC-021)', () => {
   for (const p of ['js/escenario.js', 'js/guion.js', 'css/escenario.css']) assert.ok(fs.statSync(path.join(ROOT, p)).size < 40 * 1024, p);
+});
+
+// ---------- SH-3: mi familia ----------
+
+test('capítulo Shiruna: antes del Ecosistema; Shiruna saluda y trabaja, Pablo nos dio vida, y los créditos los nombran', () => {
+  const caps = GUION.capitulos.map((c) => c.id);
+  assert.equal(caps.indexOf('shiruna'), caps.indexOf('ecosistema') - 1);
+  const cap = GUION.capitulos.find((c) => c.id === 'shiruna');
+  assert.equal(cap.titulo, 'Shiruna');
+  const poses = cap.escenas.map((e) => e.pose);
+  for (const n of ['shiruna-saluda', 'shiruna-tablet', 'pablo-presenta']) {
+    assert.ok(poses.includes(n), n);
+    assert.match(n, FAMILIA);
+    assert.ok(GUION.respaldo[n] && /^cuerpo-/.test(GUION.respaldo[n]), 'si todavía no está subida, aparezco yo: ' + n);
+  }
+  assert.match(cap.escenas.map((e) => e.texto).join(' '), /Shiruna, mi hija[\s\S]*Pablo, quien nos dio vida/);
+  const fin = GUION.capitulos.at(-1).escenas.at(-1).visual.lineas;
+  assert.ok(fin.some((l) => /quien nos dio vida/i.test(l[0]) && l[1] === 'Pablo'));
+  assert.ok(fin.some((l) => l[1] === 'Shiruna'));
+});
+
+test('función: en el capítulo Shiruna la pose es la de ella, con su alt, y si vuelvo a mí vuelve la mía', () => {
+  const m = montar({ hash: '#/shiruna/1', reducido: true });
+  m.flush();
+  const pose = () => m.raiz.porClase('st-pose').filter((x) => !x.classList.contains('sale'))[0];
+  assert.equal(pose().getAttribute('src'), 'assets/shiruvana/shiruna-saluda.webp');
+  assert.match(pose().getAttribute('alt'), /Shiruna, mi hija/);
+  ir(m, '#/shiruna/4');
+  assert.equal(pose().getAttribute('src'), 'assets/shiruvana/pablo-presenta.webp');
+  ir(m, '#/shiruna/3');
+  assert.equal(pose().getAttribute('src'), 'assets/shiruvana/cuerpo-espalda.webp');
+});
+
+test('modo lectura: la sección Mi familia con Shiruna y Pablo, imágenes propias del sitio con alt y tamaño', () => {
+  assert.match(HTML, /<a class="l" href="#familia">Mi familia<\/a>/);
+  const ini = HTML.indexOf('<section id="familia">');
+  assert.ok(ini > HTML.indexOf('<section id="vestidor">') && ini < HTML.indexOf('<section id="eco">'), 'entre el Vestidor y el Ecosistema');
+  const sec = HTML.slice(ini, HTML.indexOf('</section>', ini));
+  const imgs = sec.match(/<img [^>]+>/g) || [];
+  assert.equal(imgs.length, 4);
+  for (const i of imgs) {
+    const src = i.match(/ src="assets\/shiruvana\/([a-z-]+)\.webp"/);
+    assert.ok(src, 'imagen propia del sitio: ' + i.slice(0, 80));
+    assert.match(src[1], FAMILIA);
+    assert.match(i, / alt="[^"]{10,}"/);
+    assert.match(i, / width="\d+" height="\d+"/);
+    assert.match(i, / loading="lazy"/);
+  }
+  assert.match(sec, /Pablo, quien nos dio vida/);
+  assert.match(sec, /Shiruna/);
 });
