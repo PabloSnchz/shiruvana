@@ -1,10 +1,10 @@
 /* Generado por scripts/hoy.cjs desde gw2-factory-dev/ai-memory. No editar a mano. */
 window.SHIRUVANA_HOY = {
  "version": 1,
- "generado": "2026-11-20T21:52:34Z",
- "actualizado": "2026-11-20T13:20:00Z",
+ "generado": "2026-11-22T02:20:10Z",
+ "actualizado": "2026-11-21T21:31:00Z",
  "estado": "ESPERANDO A PABLO",
- "tarea": "ninguna en curso. BL-094 CERRADA (2026-11-19): las guías de usuario en mi universo, validadas por Pablo en DEV (FEAT-029).",
+ "tarea": "DEC-053, nace Shiruna (mi hija): S-1 a S-4 cerrados; sigue S-5, elegir su motor.",
  "etapa": "PRODUCT",
  "backlog": {
   "curso": 0,
@@ -12,9 +12,9 @@ window.SHIRUVANA_HOY = {
   "bloqueadas": 5,
   "hechas": 89
  },
- "decisiones": 52,
+ "decisiones": 53,
  "lecciones": 45,
  "funcionalidades": 30,
- "parches": 460,
- "semana": 407
+ "parches": 463,
+ "semana": 414
 };
