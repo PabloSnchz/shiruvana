@@ -1,7 +1,7 @@
 # CI: VERDE
 
-- Commit verificado: 2fe1f4fb3d8774f71dc9bbf7056f7c728450ae5b
-- La Guarida verificada: 4b6b362931311479d8da350688710400f5e1caec
+- Commit verificado: 2a041771d77cb6c6e439f64103c21085825211da
+- La Guarida verificada: d8377e83ac3957f052bacb803c6aa60043e863c7
 
 ℹ tests 68
 ℹ pass 68
