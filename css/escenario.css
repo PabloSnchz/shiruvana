@@ -1,5 +1,8 @@
-/* Escenario 1.4.0 — mi presentación por escenas (BL-090 MC-1 a MC-4).
-   Solo actúa con html.funcion; sin esa clase el sitio es el modo lectura de siempre. */
+/* Escenario 1.5.0 — mi presentación por escenas (BL-090 MC-1 a MC-4 · 1.5.0 fluidez).
+   Solo actúa con html.funcion; sin esa clase el sitio es el modo lectura de siempre.
+   1.5.0 (FLU-2, 2026-11-23): sin desenfoques detrás (backdrop-filter). La cápsula de capítulos y el
+   globo están sobre chispas y una pose que se mueven sin parar, así que el navegador rehacía el
+   desenfoque en cada cuadro. Ahora son casi opacos y se ven igual. */
 
 #escenario { display: none; }
 nav.top a.l.play { color: var(--amber); font-weight: 600; }
@@ -69,8 +72,8 @@ html.funcion #escenario {
 .st-marca img { width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 0 0 2px var(--amber); }
 .st-caps {
   display: flex; gap: 2px; overflow-x: auto; flex: 0 1 auto; min-width: 0; margin: 0 auto; padding: 4px;
-  border-radius: 999px; border: 1px solid var(--border); background: rgba(21,21,29,.72);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); scrollbar-width: none;
+  border-radius: 999px; border: 1px solid var(--border); background: rgba(21,21,29,.94);
+  scrollbar-width: none;
 }
 .st-caps::-webkit-scrollbar { display: none; }
 .st-cap {
@@ -273,8 +276,7 @@ html.funcion #escenario {
   margin: 0 0 16px max(24px, 6vw); max-width: 640px;
   display: flex; gap: 14px; align-items: flex-start;
   padding: 16px 18px; border-radius: 18px; border: 1px solid var(--border);
-  background: rgba(21,21,29,.9); box-shadow: 0 12px 40px rgba(0,0,0,.45);
-  backdrop-filter: blur(6px);
+  background: rgba(21,21,29,.94); box-shadow: 0 12px 40px rgba(0,0,0,.45);
 }
 .st-globo::after { content: ""; position: absolute; right: -9px; bottom: 28px; width: 16px; height: 16px; background: inherit; border-right: 1px solid var(--border); border-top: 1px solid var(--border); transform: rotate(45deg); }
 .st-globo.entra { animation: st-globo .4s cubic-bezier(.2,.8,.2,1) both; }
