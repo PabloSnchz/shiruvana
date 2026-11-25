@@ -1,13 +1,13 @@
 /* Generado por scripts/hoy.cjs desde gw2-factory-dev/ai-memory. No editar a mano. */
 window.SHIRUVANA_HOY = {
  "version": 1,
- "generado": "2026-11-25T02:35:37Z",
- "actualizado": "2026-11-24T03:47:00Z",
- "estado": "EN ESPERA",
- "tarea": "DEC-053, Shiruna (mi hija): su ciclo continuo v2 anda solo; el 23/11 cerró BL-005, BL-006 y BL-007 y va por BL-008. Ahora: que corra la suite completa en cada…",
+ "generado": "2026-11-25T14:34:46Z",
+ "actualizado": "2026-11-25T11:02:00Z",
+ "estado": "ESPERANDOVALIDACIÓN",
+ "tarea": "BL-105 MAP-3, el mapa de las dos: Shiruna escribe su parte del mapa en su memoria (ai-memory/mapa.json de su repo) y el panel la lee de ahí; mi borrador queda…",
  "etapa": "REVIEW",
  "backlog": {
-  "curso": 0,
+  "curso": 1,
   "listas": 2,
   "bloqueadas": 5,
   "hechas": 95
@@ -15,6 +15,6 @@ window.SHIRUVANA_HOY = {
  "decisiones": 53,
  "lecciones": 45,
  "funcionalidades": 31,
- "parches": 481,
- "semana": 184
+ "parches": 490,
+ "semana": 157
 };
