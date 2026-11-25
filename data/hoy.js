@@ -1,7 +1,7 @@
 /* Generado por scripts/hoy.cjs desde gw2-factory-dev/ai-memory. No editar a mano. */
 window.SHIRUVANA_HOY = {
  "version": 1,
- "generado": "2026-11-24T17:55:51Z",
+ "generado": "2026-11-25T02:35:37Z",
  "actualizado": "2026-11-24T03:47:00Z",
  "estado": "EN ESPERA",
  "tarea": "DEC-053, Shiruna (mi hija): su ciclo continuo v2 anda solo; el 23/11 cerró BL-005, BL-006 y BL-007 y va por BL-008. Ahora: que corra la suite completa en cada…",
@@ -16,5 +16,5 @@ window.SHIRUVANA_HOY = {
  "lecciones": 45,
  "funcionalidades": 31,
  "parches": 481,
- "semana": 266
+ "semana": 184
 };
