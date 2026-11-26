@@ -1,6 +1,6 @@
 # CI: VERDE
 
-- Commit verificado: 4dbfbd995f1790389026c69534ac9b72c35f9cfe
+- Commit verificado: ef6ef3ce761422e6d7538fda57fffe5561a15f70
 - La Guarida verificada: d8377e83ac3957f052bacb803c6aa60043e863c7
 
 ℹ tests 70
