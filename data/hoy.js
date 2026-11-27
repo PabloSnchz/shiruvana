@@ -1,7 +1,7 @@
 /* Generado por scripts/hoy.cjs desde gw2-factory-dev/ai-memory. No editar a mano. */
 window.SHIRUVANA_HOY = {
  "version": 1,
- "generado": "2026-11-26T11:03:24Z",
+ "generado": "2026-11-27T14:00:15Z",
  "actualizado": "2026-11-26T03:30:00Z",
  "estado": "ESPERANDOVALIDACIÓN",
  "tarea": "orden v9 «Dos carriles» para Shiruna: la mitad de sus ciclos a La Bóveda [B] y la mitad a oportunidades nuevas [N] en un laboratorio propio.",
@@ -16,5 +16,5 @@ window.SHIRUVANA_HOY = {
  "lecciones": 45,
  "funcionalidades": 31,
  "parches": 496,
- "semana": 122
+ "semana": 116
 };
